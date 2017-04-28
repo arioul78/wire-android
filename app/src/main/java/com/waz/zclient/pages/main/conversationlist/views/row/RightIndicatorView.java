@@ -18,6 +18,7 @@
 package com.waz.zclient.pages.main.conversationlist.views.row;
 
 import android.content.Context;
+import android.os.Build;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,27 +26,17 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.waz.api.IConversation;
-import com.waz.api.NetworkMode;
 import com.waz.zclient.R;
-import com.waz.zclient.controllers.mediaplayer.MediaPlayerState;
-import com.waz.zclient.controllers.streammediaplayer.IStreamMediaPlayerController;
-import com.waz.zclient.core.stores.network.DefaultNetworkAction;
-import com.waz.zclient.core.stores.network.INetworkStore;
 import com.waz.zclient.ui.text.CircleIconButton;
 import com.waz.zclient.utils.ViewUtils;
 
 public class RightIndicatorView extends LinearLayout {
     private final int initialPadding;
-    // Media player control indicator
-    private CircleIconButton mediaControlView;
     private TextView joinCallView;
     public CircleIconButton muteButton;
 
     private IConversation conversation;
-    private IStreamMediaPlayerController streamMediaPlayerController;
-    private INetworkStore networkStore;
 
-    private boolean isMediaControlVisible;
     private boolean isMuteVisible;
     private boolean isJoinCallVisible;
 
@@ -69,7 +60,12 @@ public class RightIndicatorView extends LinearLayout {
 
         muteButton = ViewUtils.getView(this, R.id.tv_conv_list_voice_muted);
         muteButton.setText(R.string.glyph__silence);
-        muteButton.setSelectedTextColor(getResources().getColor(R.color.calling__ongoing__background__color));
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            //noinspection deprecation
+            muteButton.setSelectedTextColor(getResources().getColor(R.color.calling_background));
+        } else {
+            muteButton.setSelectedTextColor(getResources().getColor(R.color.calling_background, getContext().getTheme()));
+        }
         muteButton.setShowCircleBorder(false);
 
         joinCallView = ViewUtils.getView(this, R.id.ttv__conv_list__join_call);
@@ -79,34 +75,6 @@ public class RightIndicatorView extends LinearLayout {
                 if (conversation != null && conversation.hasUnjoinedCall() && callback != null) {
                     callback.startCall(conversation);
                 }
-            }
-        });
-        mediaControlView = ViewUtils.getView(this, R.id.tv_conv_list_media_player);
-        mediaControlView.setText(R.string.glyph__pause);
-        mediaControlView.setSelectedTextColor(getResources().getColor(R.color.calling__ongoing__background__color));
-        mediaControlView.setShowCircleBorder(false);
-        mediaControlView.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (streamMediaPlayerController == null ||
-                    networkStore == null) {
-                    return;
-                }
-                if (!streamMediaPlayerController.isSelectedConversation(conversation.getId())) {
-                    return;
-                }
-
-                networkStore.doIfHasInternetOrNotifyUser(new DefaultNetworkAction() {
-                    @Override
-                    public void execute(NetworkMode networkMode) {
-                        final MediaPlayerState mediaPlayerState = streamMediaPlayerController.getMediaPlayerState(conversation.getId());
-                        if (mediaPlayerState.isPauseControl()) {
-                            streamMediaPlayerController.pause(conversation.getId());
-                        } else if (mediaPlayerState.isPlayControl()) {
-                            streamMediaPlayerController.play(conversation.getId());
-                        }
-                    }
-                });
             }
         });
     }
@@ -123,33 +91,6 @@ public class RightIndicatorView extends LinearLayout {
     public void updated() {
         isJoinCallVisible = updateJoinCallIndicator();
         isMuteVisible = updateMuteIndicator();
-        isMediaControlVisible = updateMediaPlayerIndicator();
-    }
-
-    private boolean updateMediaPlayerIndicator() {
-        if (streamMediaPlayerController == null) {
-            mediaControlView.setVisibility(GONE);
-            return false;
-        }
-        MediaPlayerState mediaPlayerState = streamMediaPlayerController.getMediaPlayerState(conversation.getId());
-        if (!streamMediaPlayerController.isSelectedConversation(conversation.getId()) ||
-            mediaPlayerState == MediaPlayerState.PlaybackCompleted ||
-            mediaPlayerState == MediaPlayerState.Stopped) {
-            mediaControlView.setVisibility(GONE);
-            return false;
-        }
-        if (mediaPlayerState.isPauseControl()) {
-            mediaControlView.setText(R.string.glyph__pause);
-            mediaControlView.setVisibility(VISIBLE);
-            return true;
-        } else if (mediaPlayerState.isPlayControl()) {
-            mediaControlView.setText(R.string.glyph__play);
-            mediaControlView.setVisibility(VISIBLE);
-            return true;
-        } else {
-            mediaControlView.setVisibility(GONE);
-            return false;
-        }
     }
 
     private boolean updateMuteIndicator() {
@@ -179,20 +120,8 @@ public class RightIndicatorView extends LinearLayout {
         return shouldShowJoinCall;
     }
 
-    public void setStreamMediaPlayerController(IStreamMediaPlayerController streamMediaPlayer) {
-        this.streamMediaPlayerController = streamMediaPlayer;
-    }
-
-    public void setNetworkStore(INetworkStore networkStore) {
-        this.networkStore = networkStore;
-    }
-
     public int getTotalWidth() {
         int totalPadding = initialPadding;
-
-        if (isMediaControlVisible) {
-            totalPadding += getResources().getDimensionPixelSize(R.dimen.conversation_list__right_icon_width);
-        }
 
         if (isJoinCallVisible || isMuteVisible) {
             totalPadding += getResources().getDimensionPixelSize(R.dimen.conversation_list__right_icon_width);

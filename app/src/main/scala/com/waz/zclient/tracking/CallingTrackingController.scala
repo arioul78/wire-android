@@ -19,16 +19,15 @@ package com.waz.zclient.tracking
 
 import android.content.Context
 import com.waz.ZLog.ImplicitTag._
-import com.waz.ZLog.verbose
+import com.waz.ZLog._
 import com.waz.api.{CauseForCallStateEvent, NetworkMode, VoiceChannelState}
 import com.waz.model.ConvId
-import com.waz.service.call.CallInfo.ClosedReason.{Interrupted, Normal}
-import com.waz.service.tracking.TrackingEventsService
+import com.waz.service.call.AvsV3.ClosedReason.{Interrupted, Normal}
 import com.waz.threading.Threading
 import com.waz.utils.RichInstant
 import com.waz.utils.events.EventContext
 import com.waz.zclient.calling.controllers.GlobalCallingController
-import com.waz.zclient.core.controllers.tracking.attributes.{CompletedMediaType, RangedAttribute}
+import com.waz.zclient.core.controllers.tracking.attributes.CompletedMediaType
 import com.waz.zclient.core.controllers.tracking.events.media.CompletedMediaActionEvent
 import com.waz.zclient.{Injectable, Injector}
 import org.threeten.bp.Instant
@@ -44,7 +43,6 @@ class CallingTrackingController(implicit injector: Injector, ctx: Context, ec: E
   val global = inject[GlobalTrackingController]
 
   import global._
-  import global.legacyController._
 
   val callController = inject[GlobalCallingController]
   import callController._
@@ -92,7 +90,6 @@ class CallingTrackingController(implicit injector: Injector, ctx: Context, ec: E
               tagEvent(JoinedCallEvent(v3Call, isVideoCall, isGroupCall, convMemCount, incoming, wasUiActive, withOtto))
 
             case SELF_CONNECTED =>
-              updateSessionAggregates(RangedAttribute.VOICE_CALLS_INITIATED)
               tagEvent(EstablishedCallEvent(v3Call, isVideoCall, isGroupCall, convMemCount, incoming, wasUiActive, withOtto, estDuration))
               startedJoining = None
 
@@ -110,8 +107,8 @@ class CallingTrackingController(implicit injector: Injector, ctx: Context, ec: E
             z <- zms.head
             cause <- if (p.isV3Call)
               z.calling.currentCall.head.flatMap {
-                case call if call.closedReason == Normal => Future.successful(if (call.hangupRequested) "SELF" else "OTHER")
-                case call if call.closedReason == Interrupted => Future.successful("gsm_call")
+                case Some(call) if call.closedReason == Normal => Future.successful(if (call.hangupRequested) "SELF" else "OTHER")
+                case Some(call) if call.closedReason == Interrupted => Future.successful("gsm_call")
                 case _ => z.network.networkMode.head.map(networkModeString)
               } else
               z.voice.voiceChannelSignal(p.convId).map(_.tracking).head.flatMap {
@@ -130,7 +127,6 @@ class CallingTrackingController(implicit injector: Injector, ctx: Context, ec: E
       callEstablished = None
       prevInfo = None
   }
-
   /**
     * If there is no active call, then a lot of these signals will potentially be empty and this future will never complete.
     * This also means we need to keep track of the previous info for the case in which we move from an active call to an inactive state.
@@ -138,7 +134,7 @@ class CallingTrackingController(implicit injector: Injector, ctx: Context, ec: E
   private def getCallTrackingInfo(st: VoiceChannelState) = for {
     zms         <- zMessaging.head
     conv        <- conversation.head
-    withOtto    <- TrackingEventsService.isOtto(conv, zms.usersStorage)
+    withOtto    <- isOtto(conv, zms.usersStorage)
     isV3        <- isV3Call.head
     video       <- videoCall.head
     isGroup     <- groupCall.head

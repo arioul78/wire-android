@@ -46,10 +46,6 @@
     <string translatable="false" name="forced_update__sub_header__font">@string/wire__typeface__regular</string>
     <string translatable="false" name="forced_update__button__font">@string/wire__typeface__regular</string>
     <string translatable="false" name="mediaplayer__font">@string/wire__typeface__light</string>
-    <string translatable="false" name="message_notification_chathead__username__font">@string/wire__typeface__light</string>
-    <string translatable="false" name="message_notification_chathead__username__text_transform">UPPER</string>
-    <string translatable="false" name="message_notification_chathead__label__font">@string/wire__typeface__light</string>
-    <string translatable="false" name="message_notification_chathead__label__text_transform"></string>
     <string translatable="false" name="network_indicator__font">@string/wire__typeface__bold</string>
     <string translatable="false" name="onboarding_hint__font">@string/wire__typeface__light</string>
     <string translatable="false" name="onboarding_hint__discover_change_profile_picture__text_font">@string/wire__typeface__light</string>
@@ -85,9 +81,9 @@
     <string translatable="false" name="pref_account_password_key">PREF_RESET_PASSWORD</string>
     <string translatable="false" name="pref_account_theme_key">pref_theme_key</string>
     <string translatable="false" name="pref_options_theme_switch_key">pref_theme_switch_key</string>
-    <string translatable="false" name="pref_options_spotify_key">PREF_SPOTIFY_LOGIN</string>
     <string translatable="false" name="pref_options_cursor_send_button_key">pref_cursor_send_button_key</string>
     <string translatable="false" name="pref_options_contacts_key">@string/pref_share_contacts_key</string>
+    <string translatable="false" name="pref_options_vbr_key">pref_options_vbr_key</string>
     <string translatable="false" name="pref_options_devices_key">pref_privacy_devices_key</string>
     <string translatable="false" name="pref_devices_current_device_category_key">pref_current_device_category_key</string>
     <string translatable="false" name="pref_devices_other_devices_category_key">pref_other_devices_category_key</string>
@@ -125,10 +121,13 @@
     <string translatable="false" name="pref_about_version_key">pref_about_version_key</string>
     <string translatable="false" name="pref_about_copyright_key">pref_about_copyright_key</string>
     <string translatable="false" name="pref_options_alerts_category_key">pref_options_alerts_category_key</string>
+    <string translatable="false" name="pref_options_calls_category_key">pref_options_calls_category_key</string>
     <string translatable="false" name="pref_options_media_category_key">pref_options_media_category_key</string>
     <string translatable="false" name="pref_options_requested_category_key">pref_options_requested_category_key</string>
     <string translatable="false" name="pref_support_website_key">pref_support_website_key</string>
     <string translatable="false" name="pref_support_contact_key">pref_support_contact_key</string>
+    <string translatable="false" name="pref_invite_key">pref_invite_key</string>
+    <string translatable="false" name="pref_force_verbose_key">pref_force_verbose_key</string>
 
     <!-- Other-->
     <string translatable="false" name="empty_string" />
@@ -143,9 +142,6 @@
     <string translatable="false" name="wire_theme_dark">dark</string>
 
     <!-- Developer preferences -->
-    <string translatable="false" name="pref_dev_status_bar_key">PREF_KEY_STATUS_BAR</string>
-    <string translatable="false" name="pref_dev_status_bar_title">Status bar</string>
-    <string translatable="false" name="pref_dev_status_bar_summary">App restart needed</string>
     <string translatable="false" name="pref_dev_avs_post_session_id_key">USER_PREFS_POST_SESSION_ID</string>
     <string translatable="false" name="pref_dev_avs_post_session_id_title">Post call session id</string>
     <string translatable="false" name="pref_dev_avs_post_session_id_summary">Post session id into conversation</string>
@@ -161,15 +157,14 @@
     <string translatable="false" name="pref_dev_otr_only_summary">Send only encrypted messages</string>
     <string translatable="false" name="pref_dev_version_info_id_key">USER_PREFS_DEV_VERSIONS_ID</string>
     <string translatable="false" name="pref_dev_version_info_id_title">Versions</string>
-    <string translatable="false" name="pref_dev_assets_v3_key">@string/zms_assets_v3</string>
-    <string translatable="false" name="pref_dev_assets_v3_title">Assets v3</string>
-    <string translatable="false" name="pref_dev_assets_v3_summary">Send assets using the Assets v3 API</string>
     <string translatable="false" name="pref_dev_calling_v3_key">@string/zms_calling_v3</string>
     <string translatable="false" name="pref_dev_calling_v3_title">Calling v3</string>
     <string translatable="false" name="pref_dev_calling_v3_dialog_title">Select a calling version</string>
     <string translatable="false" name="pref_dev_net_debug_key">USER_PREFS_DEV_NET_DEBUG_ID</string>
     <string translatable="false" name="pref_dev_net_debug_title">Press for network info</string>
     <string translatable="false" name="pref_dev_net_debug_summary">Do it!</string>
+    <string translatable="false" name="pref_dev_verbose_logging_enabled">Verbose logging enabled</string>
+    <string translatable="false" name="pref_dev_verbose_logging_disabled">Verbose logging disabled</string>
 
     <!--Notifications preferences-->
     <string translatable="false" name="pref_dev_category_notifications_key">PREF_NOTIFICATIONS_CATEGORY</string>
@@ -179,9 +174,12 @@
     <string translatable="false" name="pref_dev_gcm_enabled_key">@string/zms_gcm_enabled</string>
     <string translatable="false" name="pref_dev_gcm_enabled_summary">Enable to receive notifications through GCM. Disable to rely on WebSockets only.</string>
     <string translatable="false" name="pref_dev_gcm_enabled_title">GCM Enabled</string>
-    <string translatable="false" name="pref_dev_websocket_ping_interval_key">@string/zms_websocket_ping_interval</string>
+    <string translatable="false" name="pref_dev_websocket_ping_interval_key">PREF_WEBSOCKET_PING_INTERVAL</string>
     <string translatable="false" name="pref_dev_websocket_ping_interval_summary">Change the frequency of checking the connection to the server. Note that increasing the frequency may have a negative impact on battery life.</string>
     <string translatable="false" name="pref_dev_websocket_ping_interval_title">WebSocket Ping Frequency (ms)</string>
+    <string translatable="false" name="pref_dev_ws_foreground_key">@string/zms_ws_foreground_service_enabled</string>
+    <string translatable="false" name="pref_dev_ws_foreground_summary">Enable to see Web Socket connection status in permanent notification</string>
+    <string translatable="false" name="pref_dev_ws_foreground_title">Web Socket foreground service</string>
 
 </resources>
 

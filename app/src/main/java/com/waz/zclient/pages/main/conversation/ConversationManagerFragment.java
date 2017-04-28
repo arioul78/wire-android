@@ -25,18 +25,18 @@ import android.support.v4.app.FragmentManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
 import com.waz.api.ConversationsList;
 import com.waz.api.IConversation;
 import com.waz.api.ImageAsset;
+import com.waz.api.Message;
 import com.waz.api.MessageContent;
 import com.waz.api.OtrClient;
 import com.waz.api.SyncState;
 import com.waz.api.User;
 import com.waz.api.UsersList;
-import com.waz.api.Verification;
-import com.waz.api.Message;
 import com.waz.model.MessageData;
-import com.waz.zclient.BaseScalaActivity;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.collections.CollectionsObserver;
@@ -50,7 +50,6 @@ import com.waz.zclient.controllers.tracking.events.group.CreatedGroupConversatio
 import com.waz.zclient.conversation.CollectionController;
 import com.waz.zclient.conversation.CollectionFragment;
 import com.waz.zclient.core.api.scala.ModelObserver;
-import com.waz.zclient.core.controllers.tracking.attributes.RangedAttribute;
 import com.waz.zclient.core.controllers.tracking.events.media.SentPictureEvent;
 import com.waz.zclient.core.stores.connect.IConnectStore;
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester;
@@ -68,11 +67,13 @@ import com.waz.zclient.pages.main.pickuser.controller.IPickUserController;
 import com.waz.zclient.pages.main.pickuser.controller.PickUserControllerScreenObserver;
 import com.waz.zclient.pages.main.profile.camera.CameraContext;
 import com.waz.zclient.pages.main.profile.camera.CameraFragment;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.utils.KeyboardUtils;
 import com.waz.zclient.utils.LayoutSpec;
 import com.waz.zclient.utils.TrackingUtils;
 import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.views.LoadingIndicatorView;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -160,7 +161,7 @@ public class ConversationManagerFragment extends BaseFragment<ConversationManage
     }
 
     private CollectionController getCollectionController() {
-        return ((BaseScalaActivity) getActivity()).injectJava(CollectionController.class);
+        return ((BaseActivity) getActivity()).injectJava(CollectionController.class);
     }
 
     @Override
@@ -227,8 +228,6 @@ public class ConversationManagerFragment extends BaseFragment<ConversationManage
         this.getControllerFactory().getOnboardingController().incrementParticipantsShowCount();
         this.getControllerFactory().getNavigationController().setRightPage(Page.PARTICIPANT, TAG);
 
-        getStoreFactory().getInAppNotificationStore().setUserLookingAtParticipants(true);
-
         getChildFragmentManager()
             .beginTransaction()
             .setCustomAnimations(R.anim.slide_in_from_bottom_pick_user,
@@ -246,7 +245,6 @@ public class ConversationManagerFragment extends BaseFragment<ConversationManage
     @Override
     public void onHideParticipants(boolean backOrCloseButtonPressed, boolean hideByConversationChange, boolean isSingleConversation) {
         this.getControllerFactory().getNavigationController().setRightPage(Page.MESSAGE_STREAM, TAG);
-        getStoreFactory().getInAppNotificationStore().setUserLookingAtParticipants(false);
         getChildFragmentManager().popBackStack(ParticipantFragment.TAG, FragmentManager.POP_BACK_STACK_INCLUSIVE);
     }
 
@@ -384,13 +382,6 @@ public class ConversationManagerFragment extends BaseFragment<ConversationManage
 
     }
 
-    @Override
-    public void onVerificationStateChanged(String conversationId,
-                                           Verification previousVerification,
-                                           Verification currentVerification) {
-
-    }
-
     //////////////////////////////////////////////////////////////////////////////////////////
     //
     //  Camera callbacks
@@ -495,7 +486,7 @@ public class ConversationManagerFragment extends BaseFragment<ConversationManage
         getStoreFactory().getNetworkStore().doIfHasInternetOrNotifyUser(null);
 
         // Photo sent via contacts quick menu
-        TrackingUtils.onSentPhotoMessage(getControllerFactory().getTrackingController(),
+        TrackingUtils.onSentPhotoMessage(((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class),
                                          getStoreFactory().getConversationStore().getCurrentConversation(),
                                          imageFromCamera ? SentPictureEvent.Source.CAMERA
                                                          : SentPictureEvent.Source.GALLERY,
@@ -555,7 +546,6 @@ public class ConversationManagerFragment extends BaseFragment<ConversationManage
     public void onSelectedUsers(List<User> users, ConversationChangeRequester requester) {
         // TODO https://wearezeta.atlassian.net/browse/AN-3730
         getControllerFactory().getPickUserController().hidePickUser(getCurrentPickerDestination(), false);
-        getStoreFactory().getInAppNotificationStore().setUserLookingAtPeoplePicker(false);
 
         IConversation currentConversation = getStoreFactory().getConversationStore().getCurrentConversation();
         if (currentConversation.getType() == IConversation.Type.ONE_TO_ONE) {
@@ -567,7 +557,7 @@ public class ConversationManagerFragment extends BaseFragment<ConversationManage
                                           R.string.conversation__create_group_conversation__no_network__button,
                                           null, true);
             }
-            getControllerFactory().getTrackingController().tagEvent(new CreatedGroupConversationEvent(true, (users.size() + 1)));
+            ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new CreatedGroupConversationEvent(true, (users.size() + 1)));
         } else if (currentConversation.getType() == IConversation.Type.GROUP) {
             currentConversation.addMembers(users);
             if (!getStoreFactory().getNetworkStore().hasInternetConnection()) {
@@ -577,9 +567,8 @@ public class ConversationManagerFragment extends BaseFragment<ConversationManage
                                           R.string.conversation__add_user__no_network__button,
                                           null, true);
             }
-            getControllerFactory().getTrackingController().tagEvent(new AddedMemberToGroupEvent(getParticipantsCount(), users.size()));
+            ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new AddedMemberToGroupEvent(getParticipantsCount(), users.size()));
         }
-        getControllerFactory().getTrackingController().updateSessionAggregates(RangedAttribute.USERS_ADDED_TO_CONVERSATIONS);
     }
 
     @Override
@@ -678,7 +667,6 @@ public class ConversationManagerFragment extends BaseFragment<ConversationManage
                                           LocationFragment.TAG)
                                  .addToBackStack(LocationFragment.TAG)
                                  .commit();
-        getStoreFactory().getInAppNotificationStore().setUserSendingPicture(true);
         getControllerFactory().getNavigationController().setRightPage(Page.SHARE_LOCATION, TAG);
     }
 
@@ -688,7 +676,6 @@ public class ConversationManagerFragment extends BaseFragment<ConversationManage
             getStoreFactory().getConversationStore().sendMessage(location);
         }
         getControllerFactory().getNavigationController().setRightPage(Page.MESSAGE_STREAM, TAG);
-        getStoreFactory().getInAppNotificationStore().setUserSendingPicture(false);
         getChildFragmentManager().popBackStack(LocationFragment.TAG, FragmentManager.POP_BACK_STACK_INCLUSIVE);
     }
 

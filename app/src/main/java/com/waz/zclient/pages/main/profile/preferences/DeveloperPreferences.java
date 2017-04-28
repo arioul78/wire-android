@@ -25,7 +25,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.preference.Preference;
-import android.view.WindowManager;
 import android.widget.Toast;
 import com.waz.zclient.R;
 import com.waz.zclient.core.controllers.tracking.events.Event;
@@ -116,7 +115,7 @@ public class DeveloperPreferences extends BasePreferenceFragment<DeveloperPrefer
         final String lastCallSessionIdKey = getString(R.string.pref_dev_avs_last_call_session_id_key);
         String lastCallSessionId = preferenceManager.getSharedPreferences().getString(lastCallSessionIdKey,
                                                                                       getString(R.string.pref_dev_avs_last_call_session_id_not_available));
-        ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(getActivity().CLIPBOARD_SERVICE);
+        ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData clip = ClipData.newPlainText(getString(R.string.pref_dev_avs_last_call_session_id_title),
                                               lastCallSessionId);
         clipboard.setPrimaryClip(clip);
@@ -134,15 +133,8 @@ public class DeveloperPreferences extends BasePreferenceFragment<DeveloperPrefer
 
     @Override
     public Event handlePreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if (key.equals(getString(R.string.pref_dev_status_bar_key))) {
-            if (sharedPreferences.getBoolean(key, true)) {
-                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-            } else {
-                getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-            }
-        } else if (key.equals(getString(R.string.pref_dev_avs_last_call_session_id_key))) {
-            String lastCallSessionId = sharedPreferences.getString(key,
-                                                                   getString(R.string.pref_dev_avs_last_call_session_id_not_available));
+        if (key.equals(getString(R.string.pref_dev_avs_last_call_session_id_key))) {
+            String lastCallSessionId = sharedPreferences.getString(key, getString(R.string.pref_dev_avs_last_call_session_id_not_available));
             lastCallSessionIdPreference.setSummary(lastCallSessionId);
         }
         return null;

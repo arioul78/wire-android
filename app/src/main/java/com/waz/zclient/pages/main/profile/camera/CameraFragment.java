@@ -23,7 +23,6 @@ import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Rect;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
@@ -34,19 +33,20 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 import com.waz.api.ImageAsset;
 import com.waz.api.ImageAssetFactory;
+import com.waz.utils.wrappers.URI;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
 import com.waz.zclient.camera.CameraPreviewObserver;
-import com.waz.zclient.camera.views.CameraPreviewTextureView;
 import com.waz.zclient.camera.FlashMode;
+import com.waz.zclient.camera.views.CameraPreviewTextureView;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
 import com.waz.zclient.controllers.camera.CameraActionObserver;
 import com.waz.zclient.controllers.drawing.DrawingController;
 import com.waz.zclient.controllers.drawing.IDrawingController;
 import com.waz.zclient.controllers.orientation.OrientationControllerObserver;
 import com.waz.zclient.pages.BaseFragment;
-import com.waz.zclient.pages.main.conversation.AssetIntentsManager;
 import com.waz.zclient.pages.extendedcursor.image.ImagePreviewLayout;
+import com.waz.zclient.pages.main.conversation.AssetIntentsManager;
 import com.waz.zclient.pages.main.profile.camera.controls.CameraBottomControl;
 import com.waz.zclient.pages.main.profile.camera.controls.CameraTopControl;
 import com.waz.zclient.ui.animation.interpolators.penner.Expo;
@@ -124,7 +124,7 @@ public class CameraFragment extends BaseFragment<CameraFragment.Container> imple
 
         intentsManager = new AssetIntentsManager(getActivity(), new AssetIntentsManager.Callback() {
             @Override
-            public void onDataReceived(AssetIntentsManager.IntentType type, Uri uri) {
+            public void onDataReceived(AssetIntentsManager.IntentType type, URI uri) {
                 processGalleryImage(uri);
             }
 
@@ -202,7 +202,6 @@ public class CameraFragment extends BaseFragment<CameraFragment.Container> imple
         if (LayoutSpec.isPhone(getActivity())) {
             getControllerFactory().getOrientationController().addOrientationControllerObserver(this);
         }
-        getStoreFactory().getInAppNotificationStore().setUserSendingPicture(true);
     }
 
     @Override
@@ -216,7 +215,6 @@ public class CameraFragment extends BaseFragment<CameraFragment.Container> imple
     public void onStop() {
         getControllerFactory().getAccentColorController().removeAccentColorObserver(this);
         getControllerFactory().getOrientationController().removeOrientationControllerObserver(this);
-        getStoreFactory().getInAppNotificationStore().setUserSendingPicture(false);
 
         super.onStop();
     }
@@ -467,7 +465,7 @@ public class CameraFragment extends BaseFragment<CameraFragment.Container> imple
         intentsManager.onActivityResult(requestCode, resultCode, data);
     }
 
-    private void processGalleryImage(Uri uri) {
+    private void processGalleryImage(URI uri) {
         imageAsset = null;
         hideCameraFeed();
         if (cameraContext != CameraContext.SIGN_UP) {

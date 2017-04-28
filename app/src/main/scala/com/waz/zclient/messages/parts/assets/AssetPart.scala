@@ -31,13 +31,12 @@ import com.waz.zclient.controllers.global.AccentColorController
 import com.waz.zclient.messages.ClickableViewPart
 import com.waz.zclient.messages.MessageView.MsgBindOptions
 import com.waz.zclient.messages.parts.ImagePartView
-import com.waz.zclient.messages.parts.assets.DeliveryState.OtherUploading
+import com.waz.zclient.messages.parts.assets.DeliveryState.{Downloading, OtherUploading}
 import com.waz.zclient.utils.ContextUtils._
 import com.waz.zclient.utils.{StringUtils, _}
 import com.waz.zclient.views.ImageAssetDrawable
 import com.waz.zclient.views.ImageController.WireImage
 import com.waz.zclient.{R, ViewHelper}
-import org.threeten.bp.Duration
 
 trait AssetPart extends View with ClickableViewPart with ViewHelper { self =>
   val controller = inject[AssetsController]
@@ -59,7 +58,7 @@ trait AssetPart extends View with ClickableViewPart with ViewHelper { self =>
   val expired = message map { m => m.isEphemeral && m.expired }
   val accentColorController = inject[AccentColorController]
 
-  val assetBackground = new AssetBackground(deliveryState.map(_ == OtherUploading), expired, accentColorController.accentColor)
+  val assetBackground = new AssetBackground(deliveryState.map(state => state == OtherUploading || state == Downloading), expired, accentColorController.accentColor)
 
   setBackground(assetBackground)
 
@@ -81,10 +80,10 @@ trait ActionableAssetPart extends AssetPart {
 
 trait PlayableAsset extends ActionableAssetPart {
   val duration = asset.map(_._1).map {
-    case AssetData.WithDuration(d) => d
-    case _ => Duration.ZERO
+    case AssetData.WithDuration(d) => Some(d)
+    case _ => None
   }
-  val formattedDuration = duration.map(d => StringUtils.formatTimeSeconds(d.getSeconds))
+  val formattedDuration = duration.map(_.fold("")(d => StringUtils.formatTimeSeconds(d.getSeconds)))
 
   protected val durationView: TextView = findById(R.id.duration)
 

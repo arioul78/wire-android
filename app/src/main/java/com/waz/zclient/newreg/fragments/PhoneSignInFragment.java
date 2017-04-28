@@ -18,17 +18,19 @@
 package com.waz.zclient.newreg.fragments;
 
 import android.Manifest;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.text.Editable;
-import android.text.TextWatcher; 
+import android.text.TextWatcher;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.TextView;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.navigation.Page;
 import com.waz.zclient.core.controllers.tracking.events.session.EnteredLoginPhoneEvent;
@@ -40,6 +42,7 @@ import com.waz.zclient.newreg.fragments.country.CountryController;
 import com.waz.zclient.newreg.utils.AppEntryUtil;
 import com.waz.zclient.newreg.views.PhoneConfirmationButton;
 import com.waz.zclient.pages.BaseFragment;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.text.TypefaceEditText;
 import com.waz.zclient.ui.utils.KeyboardUtils;
 import com.waz.zclient.ui.views.tab.TabIndicatorLayout;
@@ -124,7 +127,12 @@ public class PhoneSignInFragment extends BaseFragment<PhoneSignInFragment.Contai
         }
         tabIndicatorLayout.setLabels(new int[] {R.string.new_reg__phone_signup__create_account, R.string.i_have_an_account});
         tabIndicatorLayout.setSelected(TabPages.SIGN_IN);
-        tabIndicatorLayout.setTextColor(getResources().getColorStateList(R.color.wire__text_color_dark_selector));
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            //noinspection deprecation
+            tabIndicatorLayout.setTextColor(getResources().getColorStateList(R.color.wire__text_color_dark_selector));
+        } else {
+            tabIndicatorLayout.setTextColor(getResources().getColorStateList(R.color.wire__text_color_dark_selector, getContext().getTheme()));
+        }
     }
 
     @Override
@@ -237,7 +245,7 @@ public class PhoneSignInFragment extends BaseFragment<PhoneSignInFragment.Contai
         // before loging in show loader and dismiss keyboard
         getContainer().enableProgress(true);
         KeyboardUtils.hideKeyboard(getActivity());
-        getControllerFactory().getTrackingController().tagEvent(new EnteredLoginPhoneEvent());
+        ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new EnteredLoginPhoneEvent());
         getStoreFactory().getAppEntryStore().setSignInPhone(textViewCountryCode.getText().toString(),
                                                             editTextPhone.getText().toString(),
                                                             errorCallback);

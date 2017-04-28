@@ -22,17 +22,16 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import com.waz.zclient.R;
-import com.waz.zclient.camera.CameraFacing;
 import com.waz.zclient.utils.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import timber.log.Timber;
 
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.UUID;
-import java.util.Collection;
 
 public class UserPreferencesController implements IUserPreferencesController {
 
@@ -46,12 +45,9 @@ public class UserPreferencesController implements IUserPreferencesController {
     public static final String USER_PERFS_AB_TESTING_GROUP = "USER_PERFS_AB_TESTING_GROUP";
     public static final String USER_PREF_PLAY_SERVICES_ERROR_SHOWN = "USER_PREF_PLAY_SERVICES_ERROR_SHOWN";
     private static final String USER_PREFS_SHOW_SHARE_CONTACTS_DIALOG = "USER_PREFS_SHOW_SHARE_CONTACTS_DIALOG ";
-    private static final String USER_PREFS_RECENT_CAMERA_DIRECTION = "USER_PREFS_RECENT_CAMERA_DIRECTION";
-    private static final String USER_PREF_SPOTIFY_LOGIN_COUNT = "PREF_SPOTIFY_LOGIN_COUNT";
     private static final String USER_PREF_PHONE_VERIFICATION_CODE = "PREF_PHONE_VERIFICATION_CODE";
     private static final String USER_PREF_APP_CRASH = "USER_PREF_APP_CRASH";
     private static final String USER_PREF_APP_CRASH_DETAILS = "USER_PREF_APP_CRASH_DETAILS";
-    private static final String USER_PREF_FLASH_STATE = "USER_PREF_FLASH_STATE";
     private static final String USER_PREF_LOGGED_IN = "USER_PREF_LOGGED_IN_%s";
     private static final String USER_PREF_AB_TESTING_UUID = "USER_PREF_AB_TESTING_UUID";
     private static final String USER_PREF_ACTION_PREFIX = "USER_PREF_ACTION_PREFIX";
@@ -114,17 +110,6 @@ public class UserPreferencesController implements IUserPreferencesController {
     }
 
     @Override
-    public void setRecentCameraDirection(CameraFacing cameraFacing) {
-        userPreferences.edit().putInt(USER_PREFS_RECENT_CAMERA_DIRECTION, cameraFacing.facing).apply();
-    }
-
-    @Override
-    public CameraFacing getRecentCameraDirection() {
-        return CameraFacing.getFacing(userPreferences.getInt(USER_PREFS_RECENT_CAMERA_DIRECTION,
-                                                             CameraFacing.BACK.facing));
-    }
-
-    @Override
     public void setReferralToken(String token) {
         userPreferences.edit().putString(USER_PREFS_REFERRAL_TOKEN, token).apply();
     }
@@ -152,11 +137,6 @@ public class UserPreferencesController implements IUserPreferencesController {
     @Override
     public String getPersonalInvitationToken() {
         return userPreferences.getString(USER_PREFS_PERSONAL_INVITATION_TOKEN, null);
-    }
-
-    @Override
-    public boolean showStatusBar() {
-        return userPreferences.getBoolean(context.getString(R.string.pref_dev_status_bar_key), true);
     }
 
     @Override
@@ -193,16 +173,6 @@ public class UserPreferencesController implements IUserPreferencesController {
     private String getLegacyDeviceId() {
         SharedPreferences prefs = context.getSharedPreferences("zprefs", Context.MODE_PRIVATE);
         return prefs.getString(PREFS_DEVICE_ID, null);
-    }
-
-    @Override
-    public void incrementSpotifyLoginTriesCount() {
-        userPreferences.edit().putInt(USER_PREF_SPOTIFY_LOGIN_COUNT, getSpotifyLoginTriesCount() + 1).apply();
-    }
-
-    @Override
-    public int getSpotifyLoginTriesCount() {
-        return userPreferences.getInt(USER_PREF_SPOTIFY_LOGIN_COUNT, 0);
     }
 
     @Override
@@ -255,24 +225,6 @@ public class UserPreferencesController implements IUserPreferencesController {
             userPreferences.edit().putString(USER_PREF_APP_CRASH_DETAILS, null).apply();
         }
         return details;
-    }
-
-    @Override
-    public String getSavedFlashState() {
-        return userPreferences.getString(USER_PREF_FLASH_STATE, "");
-    }
-
-    @Override
-    public void setSavedFlashState(String state) {
-        userPreferences.edit().putString(USER_PREF_FLASH_STATE, state).apply();
-    }
-
-    @Override
-    public boolean isImageDownloadPolicyWifiOnly() {
-        String downloadPolicyWifi = context.getString(R.string.zms_image_download_value_wifi);
-        String defaultPolicy = context.getString(R.string.zms_image_download_value_always);
-        String prefKey = context.getString(R.string.pref_options_image_download_key);
-        return downloadPolicyWifi.equals(userPreferences.getString(prefKey, defaultPolicy));
     }
 
     @Override
@@ -381,5 +333,18 @@ public class UserPreferencesController implements IUserPreferencesController {
     @Override
     public void setPlayServicesErrorShown(boolean value) {
         userPreferences.edit().putBoolean(USER_PREF_PLAY_SERVICES_ERROR_SHOWN, value).apply();
+    }
+
+    @Override
+    public boolean isVariableBitRateEnabled() {
+        return userPreferences.getBoolean(context.getString(R.string.pref_options_vbr_key), true);
+    }
+
+    @Override
+    public boolean swapForceVerboseLogging() {
+        String key = context.getString(R.string.pref_force_verbose_key);
+        boolean updated = !userPreferences.getBoolean(key, false);
+        userPreferences.edit().putBoolean(key, updated).apply();
+        return updated;
     }
 }

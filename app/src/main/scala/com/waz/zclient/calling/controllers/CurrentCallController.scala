@@ -28,12 +28,13 @@ import com.waz.api._
 import com.waz.avs.{VideoPreview, VideoRenderer}
 import com.waz.model.VoiceChannelData.ConnectionState
 import com.waz.model._
-import com.waz.service.call.CallInfo
-import com.waz.service.call.FlowManagerService.{StateAndReason, UnknownState}
+import com.waz.service.call.AvsV3.VideoReceiveState
+import com.waz.service.call.DefaultFlowManagerService.{StateAndReason, UnknownState}
 import com.waz.threading.Threading
 import com.waz.utils._
 import com.waz.utils.events.{ClockSignal, Signal}
 import com.waz.zclient._
+import com.waz.zclient.calling.views.CallControlButtonView.{ButtonColor, ButtonSettings}
 import com.waz.zclient.utils.events.ButtonSignal
 import org.threeten.bp.Duration._
 import org.threeten.bp.Instant._
@@ -46,15 +47,21 @@ class CurrentCallController(implicit inj: Injector, cxt: WireContext) extends In
 
   private implicit val eventContext = cxt.eventContext
 
-  val showOngoingControls = callState.map {
-    case OTHER_CALLING | OTHERS_CONNECTED | TRANSFER_CALLING | TRANSFER_READY => false
-    case _ => true
-  }
+  import Threading.Implicits.Background
+
+  val showOngoingControls = convDegraded.flatMap {
+    case true => Signal(true)
+    case false => callState.map {
+      case OTHER_CALLING | OTHERS_CONNECTED | TRANSFER_CALLING | TRANSFER_READY => false
+      case _ => true
+    }
+  }.orElse(Signal(true)) //ensure that controls are ALWAYS visible in case something goes wrong...
 
   val videoSendState = isV3Call.flatMap {
-    case true => v3Call.map(_.videoSendState)
+    case true => v3Call.collect { case Some(c) => c.videoSendState }
     case _ => currentChannel map (_.video.videoSendState)
   }.disableAutowiring()
+
 
   val flowManager = zms map (_.flowmanager)
 
@@ -92,16 +99,16 @@ class CurrentCallController(implicit inj: Injector, cxt: WireContext) extends In
   }
 
   val callEstablished = isV3Call.flatMap {
-    case true => v3Call.map(_.state == SELF_CONNECTED)
+    case true => v3Call.map(_.exists(_.state == SELF_CONNECTED))
     case _ => currentChannel map (_.deviceState == ConnectionState.Connected)
   }.disableAutowiring()
 
   val onCallEstablished = callEstablished.onChanged
 
   val duration = {
-    def timeSince(est: Option[Instant]) = new ClockSignal(Duration.ofSeconds(1).asScala).map(_ => est.fold2(ZERO, between(_, now)))
+    def timeSince(est: Option[Instant]) = ClockSignal(Duration.ofSeconds(1).asScala).map(_ => est.fold2(ZERO, between(_, now)))
     isV3Call.flatMap {
-      case true => v3Call.flatMap(c => timeSince(c.estabTime))
+      case true => v3Call.collect { case Some(c) => c.estabTime }.flatMap(timeSince)
       case _ => currentChannel flatMap {
         case ch if ch.deviceState == ConnectionState.Connected => timeSince(ch.tracking.established)
         case _ => Signal.const(ZERO)
@@ -109,22 +116,25 @@ class CurrentCallController(implicit inj: Injector, cxt: WireContext) extends In
     }
   }
 
-  val subtitleText = (for {
-    video <- videoCall
-    state <- callState
-    dur <- duration map { duration =>
-      val seconds = ((duration.toMillis / 1000) % 60).toInt
-      val minutes = ((duration.toMillis / 1000) / 60).toInt
-      f"$minutes%02d:$seconds%02d"
+  val subtitleText: Signal[String] = convDegraded.flatMap {
+    case true => Signal("")
+    case false => (for {
+      video <- videoCall
+      state <- callState
+      dur <- duration map { duration =>
+        val seconds = ((duration.toMillis / 1000) % 60).toInt
+        val minutes = ((duration.toMillis / 1000) / 60).toInt
+        f"$minutes%02d:$seconds%02d"
+      }
+    } yield (video, state, dur)).map {
+      case (true,  SELF_CALLING,  _)                    => cxt.getString(R.string.calling__header__outgoing_video_subtitle)
+      case (false, SELF_CALLING,  _)                    => cxt.getString(R.string.calling__header__outgoing_subtitle)
+      case (true,  OTHER_CALLING, _)                    => cxt.getString(R.string.calling__header__incoming_subtitle__video)
+      case (false, OTHER_CALLING | OTHERS_CONNECTED, _) => cxt.getString(R.string.calling__header__incoming_subtitle)
+      case (_,     SELF_JOINING,  _)                    => cxt.getString(R.string.calling__header__joining)
+      case (false, SELF_CONNECTED, duration)            => duration
+      case _ => ""
     }
-  } yield (video, state, dur)) map {
-    case (true,  SELF_CALLING,                     _)        => cxt.getString(R.string.calling__header__outgoing_video_subtitle)
-    case (false, SELF_CALLING,                     _)        => cxt.getString(R.string.calling__header__outgoing_subtitle)
-    case (true,  OTHER_CALLING,                    _)        => cxt.getString(R.string.calling__header__incoming_subtitle__video)
-    case (false, OTHER_CALLING | OTHERS_CONNECTED, _)        => cxt.getString(R.string.calling__header__incoming_subtitle)
-    case (_,     SELF_JOINING,                     _)        => cxt.getString(R.string.calling__header__joining)
-    case (false, SELF_CONNECTED,                   duration) => duration
-    case _ => ""
   }
 
   val otherParticipants = currentChannel.zip(selfUser) map {
@@ -133,7 +143,7 @@ class CurrentCallController(implicit inj: Injector, cxt: WireContext) extends In
   }
 
   val otherSendingVideo = isV3Call.flatMap {
-    case true => v3Call.map(_.videoReceiveState == CallInfo.VideoReceiveState.Started)
+    case true => v3Call.map(_.exists(_.videoReceiveState == VideoReceiveState.Started))
     case _ => otherParticipants map {
       case Vector(other) => other.sendsVideo
       case _ => false
@@ -156,7 +166,7 @@ class CurrentCallController(implicit inj: Injector, cxt: WireContext) extends In
   }
 
   val participantIdsToDisplay = isV3Call.flatMap {
-    case true => v3Call.map(_.others.toVector)
+    case true => v3Call.map(_.fold(Vector.empty[UserId])(_.others.toVector))
     case _ => Signal(otherParticipants, groupCall, callerData, otherUser).map { values =>
       verbose(s"(otherParticipants, groupCall, callerData, otherUser): $values")
       values match {
@@ -215,6 +225,10 @@ class CurrentCallController(implicit inj: Injector, cxt: WireContext) extends In
     }
   }
 
+  def continueDegradedCall(): Unit = v3ServiceAndCurrentConvId.head.map {
+    case (cs, _) => cs.continueDegradedCall()
+  }
+
   def vibrate(): Unit = {
     val audioManager = Option(inject[AudioManager])
     val vibrator = Option(inject[Vibrator])
@@ -246,16 +260,46 @@ class CurrentCallController(implicit inj: Injector, cxt: WireContext) extends In
     }
   }
 
+  val vbrEnabled: Signal[String] = v3Service.flatMap(_.otherSideCBR).map {
+    case false => ""
+    case true => cxt.getString(R.string.audio_message__constant_bit_rate)
+  }
+
   val speakerButton = ButtonSignal(zms.flatMap(_.mediamanager.isSpeakerOn), zms.map(_.mediamanager)) {
     case (mm, isSpeakerSet) => mm.setSpeaker(!isSpeakerSet)
   }
 
+  val leftButtonSettings = convDegraded.flatMap {
+    case true =>
+      outgoingCall.map { outgoing =>
+        ButtonSettings(R.string.glyph__close, R.string.confirmation_menu__cancel, () => if (outgoing) leaveCall() else dismissCall())
+      }
+    case false => Signal(ButtonSettings(R.string.glyph__microphone_off, R.string.incoming__controls__ongoing__mute, () => toggleMuted()))
+  }
+
+  val middleButtonSettings = convDegraded.flatMap {
+    case true  =>
+      outgoingCall.map { outgoing =>
+        val text = if (outgoing) R.string.conversation__action__call else R.string.incoming__controls__incoming__accept
+        ButtonSettings(R.string.glyph__call, text, () => continueDegradedCall(), ButtonColor.Green)
+      }
+    case false => Signal(ButtonSettings(R.string.glyph__end_call, R.string.incoming__controls__ongoing__hangup, () => leaveCall(), ButtonColor.Red))
+  }
+
+  val rightButtonSettings = videoCall.map {
+    case true  => ButtonSettings(R.string.glyph__video,        R.string.incoming__controls__ongoing__video,   () => toggleVideo())
+    case false => ButtonSettings(R.string.glyph__speaker_loud, R.string.incoming__controls__ongoing__speaker, () => speakerButton.press())
+  }
+
   val isTablet = Signal(LayoutSpec.isTablet(cxt))
 
-  val rightButtonShown = Signal(videoCall, callEstablished, captureDevices, isTablet) map {
-    case (true, false, _, _) => false
-    case (true, true, captureDevices, _) => captureDevices.size >= 0
-    case (false, _, _, isTablet) => !isTablet //Tablets don't have ear-pieces, so you can't switch between speakers
-    case _ => false
+  val rightButtonShown = convDegraded.flatMap {
+    case true  => Signal(false)
+    case false => Signal(videoCall, callEstablished, captureDevices, isTablet) map {
+      case (true, false, _, _) => false
+      case (true, true, captureDevices, _) => captureDevices.size >= 0
+      case (false, _, _, isTablet) => !isTablet //Tablets don't have ear-pieces, so you can't switch between speakers
+      case _ => false
+    }
   }
 }

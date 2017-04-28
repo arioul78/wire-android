@@ -17,10 +17,10 @@
  */
 package com.waz.zclient.controllers.stubs;
 
-import android.net.Uri;
 import android.view.View;
 import com.waz.api.Message;
 import com.waz.api.User;
+import com.waz.utils.wrappers.URI;
 import com.waz.zclient.controllers.singleimage.ISingleImageController;
 import com.waz.zclient.controllers.singleimage.SingleImageObserver;
 
@@ -28,7 +28,7 @@ public class StubSingleImageController implements ISingleImageController {
 
     @Override
     public void hideSingleImage() {
-        ;
+
     }
 
     @Override
@@ -43,17 +43,17 @@ public class StubSingleImageController implements ISingleImageController {
 
     @Override
     public void removeSingleImageObserver(SingleImageObserver observer) {
-        ;
+
     }
 
     @Override
     public void clearReferences() {
-        ;
+
     }
 
     @Override
     public void addSingleImageObserver(SingleImageObserver observer) {
-        ;
+
     }
 
     @Override
@@ -63,12 +63,12 @@ public class StubSingleImageController implements ISingleImageController {
 
     @Override
     public void tearDown() {
-        ;
+
     }
 
     @Override
     public void setContainerOutOfScreen(boolean containerOutOfScreen) {
-        ;
+
     }
 
     @Override
@@ -78,16 +78,16 @@ public class StubSingleImageController implements ISingleImageController {
 
     @Override
     public void showSingleImage(Message message) {
-        ;
+
     }
 
     @Override
     public void showSingleImage(User user) {
-        ;
+
     }
 
     @Override
-    public void showVideo(Uri uri) {
+    public void showVideo(URI uri) {
 
     }
 

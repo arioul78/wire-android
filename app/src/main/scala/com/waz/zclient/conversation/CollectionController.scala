@@ -17,11 +17,10 @@
  */
 package com.waz.zclient.conversation
 
-import java.util
-import java.util.concurrent.CopyOnWriteArraySet
-
+import android.text.SpannableString
+import android.text.style.BackgroundColorSpan
 import com.waz.ZLog._
-import com.waz.api.{IConversation, Message, TypeFilter}
+import com.waz.api.{ContentSearchQuery, IConversation, Message, TypeFilter}
 import com.waz.model._
 import com.waz.service.ZMessaging
 import com.waz.threading.SerialDispatchQueue
@@ -44,7 +43,7 @@ class CollectionController(implicit injector: Injector) extends Injectable {
 
   val assetStorage = zms.map(_.assetsStorage)
 
-  private val observers: java.util.Set[CollectionsObserver] = new util.HashSet[CollectionsObserver]
+  private var observers = Set.empty[CollectionsObserver]
 
   val conversation = zms.zip(currentConv) flatMap { case (zms, convId) => zms.convsStorage.signal(convId) }
 
@@ -58,29 +57,36 @@ class CollectionController(implicit injector: Injector) extends Injectable {
 
   val clickedMessage = EventStream[MessageData]()
 
-  private def performOnObservers(func: (CollectionsObserver) => Unit) = {
-    val collectionObservers: CopyOnWriteArraySet[CollectionsObserver] = new CopyOnWriteArraySet[CollectionsObserver](observers)
-    import scala.collection.JavaConversions._
-    for (observer <- collectionObservers) {
-      func(observer)
-    }
+  val contentSearchQuery = Signal[ContentSearchQuery](ContentSearchQuery.empty)
+
+  val matchingTextSearchMessages = for {
+    z <- zms
+    convId <- currentConv
+    query <- contentSearchQuery
+    res <- if (query.isEmpty) Signal.const(Set.empty[MessageId])
+           else Signal future z.messagesIndexStorage.matchingMessages(query, Some(convId))
+  } yield res
+
+  def openCollection() = observers foreach { _.openCollection() }
+
+  def closeCollection() = { observers foreach { _.closeCollection() }; openedCollection ! None }
+
+  def requestPreviousItem(): Unit = observers foreach { _.previousItemRequested() }
+
+  def requestNextItem(): Unit = observers foreach { _.nextItemRequested() }
+
+  def openShareCollectionItem(messageData: MessageData): Unit = observers foreach { _.shareCollectionItem(messageData) }
+
+  def closeShareCollectionItem(): Unit = observers foreach { _.closeCollectionShare() }
+
+  def addObserver(collectionsObserver: CollectionsObserver): Unit = observers += collectionsObserver
+
+  def removeObserver(collectionsObserver: CollectionsObserver): Unit = observers -= collectionsObserver
+
+  def clearSearch() = {
+    focusedItem ! None
+    contentSearchQuery ! ContentSearchQuery.empty
   }
-
-  def openCollection = performOnObservers(_.openCollection())
-
-  def closeCollection = { performOnObservers(_.closeCollection()); openedCollection ! None }
-
-  def requestPreviousItem(): Unit = performOnObservers(_.previousItemRequested())
-
-  def requestNextItem(): Unit = performOnObservers(_.nextItemRequested())
-
-  def openShareCollectionItem(messageData: MessageData): Unit = performOnObservers(_.shareCollectionItem(messageData))
-
-  def closeShareCollectionItem(): Unit = {performOnObservers(_.closeCollectionShare())}
-
-  def addObserver(collectionsObserver: CollectionsObserver): Unit = observers.add(collectionsObserver)
-
-  def removeObserver(collectionsObserver: CollectionsObserver): Unit = observers.remove(collectionsObserver)
 }
 
 object CollectionController {
@@ -121,5 +127,35 @@ object CollectionController {
       TypeFilter(Message.Type.RICH_MEDIA, Some(3)),
       TypeFilter(Message.Type.ANY_ASSET, Some(3))
     )
+  }
+}
+
+object CollectionUtils {
+  def getHighlightedSpannableString(originalMessage: String, normalizedMessage: String, queries: Set[String], color: Int, beginThreshold: Int = -1): (SpannableString, Int) ={
+    def getQueryPosition(normalizedMessage: String, query: String, fromIndex: Int = 0, acc: Seq[(Int, Int)] = Seq()): Seq[(Int, Int)] ={
+      val beginIndex = normalizedMessage.indexOf(query, fromIndex)
+      if (beginIndex < 0) {
+        return acc
+      }
+      val endIndex = Math.min(beginIndex + query.length, normalizedMessage.length)
+      if (beginIndex > 0 && normalizedMessage.charAt(beginIndex - 1).isLetterOrDigit){
+        return getQueryPosition(normalizedMessage, query, endIndex, acc)
+      }
+      getQueryPosition(normalizedMessage, query, endIndex, acc ++ Seq((beginIndex, endIndex)))
+    }
+    val matches = queries.map(getQueryPosition(normalizedMessage, _))
+    if (matches.exists(_.isEmpty)) {
+      return (new SpannableString(originalMessage), 0)
+    }
+    val flatMatches = matches.flatten.filter(_._1 >= 0)
+    if (flatMatches.isEmpty) {
+      return (new SpannableString(originalMessage), 0)
+    }
+    val minPos = if (beginThreshold == -1) 0 else Math.max(flatMatches.map(_._1).min - beginThreshold, 0)
+    val ellipsis = if (minPos > 0) "..." else ""
+    val spannableString = new SpannableString(ellipsis + originalMessage.substring(minPos))
+    val offset = minPos - ellipsis.length
+    flatMatches.foreach(pos => spannableString.setSpan(new BackgroundColorSpan(color), pos._1 - offset, pos._2 - offset, 0))
+    (spannableString, flatMatches.size)
   }
 }

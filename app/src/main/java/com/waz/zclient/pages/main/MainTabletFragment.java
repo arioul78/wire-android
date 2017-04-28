@@ -18,7 +18,6 @@
 package com.waz.zclient.pages.main;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -27,8 +26,10 @@ import android.support.v4.app.FragmentTransaction;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import com.waz.api.ErrorsList;
 import com.waz.api.Message;
 import com.waz.api.User;
+import com.waz.utils.wrappers.URI;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
@@ -37,26 +38,29 @@ import com.waz.zclient.controllers.confirmation.ConfirmationRequest;
 import com.waz.zclient.controllers.confirmation.IConfirmationController;
 import com.waz.zclient.controllers.navigation.Page;
 import com.waz.zclient.controllers.singleimage.SingleImageObserver;
-import com.waz.zclient.core.controllers.tracking.attributes.RangedAttribute;
+import com.waz.zclient.core.stores.inappnotification.InAppNotificationStoreObserver;
+import com.waz.zclient.core.stores.inappnotification.KnockingEvent;
+import com.waz.zclient.fragments.ImageFragment;
 import com.waz.zclient.pages.BaseFragment;
 import com.waz.zclient.pages.main.backgroundmain.views.BackgroundFrameLayout;
-import com.waz.zclient.pages.main.conversation.SingleImageFragment;
-import com.waz.zclient.pages.main.conversation.SingleImageMessageFragment;
 import com.waz.zclient.pages.main.conversation.SingleImageUserFragment;
 import com.waz.zclient.pages.main.conversation.VideoPlayerFragment;
-import com.waz.zclient.pages.main.inappnotification.InAppNotificationFragment;
+import com.waz.zclient.pages.main.conversationlist.ConfirmationFragment;
+import com.waz.zclient.utils.SyncErrorUtils;
 import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.views.menus.ConfirmationMenu;
+import net.hockeyapp.android.ExceptionHandler;
 
 
 public class MainTabletFragment extends BaseFragment<MainTabletFragment.Container> implements
                                                                                    OnBackPressedListener,
-                                                                                   InAppNotificationFragment.Container,
                                                                                    RootFragment.Container,
                                                                                    SingleImageObserver,
-                                                                                   SingleImageFragment.Container,
+                                                                                   SingleImageUserFragment.Container,
                                                                                    ConfirmationObserver,
-                                                                                   AccentColorObserver {
+                                                                                   AccentColorObserver,
+                                                                                   ConfirmationFragment.Container,
+                                                                                   InAppNotificationStoreObserver {
 
     public static final String TAG = MainTabletFragment.class.getName();
     private static final String ARG_LOCK_EXPANDED = "ARG_LOCK_EXPANDED";
@@ -82,10 +86,6 @@ public class MainTabletFragment extends BaseFragment<MainTabletFragment.Containe
         if (savedInstanceState == null) {
             FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
 
-            transaction.add(R.id.fl_fragment_main_in_app_notification,
-                            InAppNotificationFragment.newInstance(),
-                            InAppNotificationFragment.TAG);
-
             transaction.add(R.id.fl_fragment_main_root_container,
                             RootFragment.newInstance(),
                             RootFragment.TAG);
@@ -108,6 +108,7 @@ public class MainTabletFragment extends BaseFragment<MainTabletFragment.Containe
     @Override
     public void onStart() {
         super.onStart();
+        getStoreFactory().getInAppNotificationStore().addInAppNotificationObserver(this);
         getControllerFactory().getSingleImageController().addSingleImageObserver(this);
         getControllerFactory().getConfirmationController().addConfirmationObserver(this);
         getControllerFactory().getAccentColorController().addAccentColorObserver(this);
@@ -120,6 +121,7 @@ public class MainTabletFragment extends BaseFragment<MainTabletFragment.Containe
         getControllerFactory().getAccentColorController().removeAccentColorObserver(this);
         getControllerFactory().getConfirmationController().removeConfirmationObserver(this);
         getControllerFactory().getSingleImageController().removeSingleImageObserver(this);
+        getStoreFactory().getInAppNotificationStore().removeInAppNotificationObserver(this);
         getControllerFactory().getAccentColorController().removeAccentColorObserver(backgroundLayout);
         getControllerFactory().getBackgroundController().removeBackgroundObserver(backgroundLayout);
         super.onStop();
@@ -158,8 +160,10 @@ public class MainTabletFragment extends BaseFragment<MainTabletFragment.Containe
 
         if (getChildFragmentManager().getBackStackEntryCount() > 0) {
             Fragment topFragment = getChildFragmentManager().findFragmentByTag(getChildFragmentManager().getBackStackEntryAt(0).getName());
-            if (topFragment instanceof SingleImageFragment) {
-                return ((SingleImageFragment) topFragment).onBackPressed();
+            if (topFragment instanceof SingleImageUserFragment) {
+                return ((SingleImageUserFragment) topFragment).onBackPressed();
+            } else if (topFragment instanceof ConfirmationFragment) {
+                return ((ConfirmationFragment) topFragment).onBackPressed();
             }
         }
 
@@ -182,12 +186,11 @@ public class MainTabletFragment extends BaseFragment<MainTabletFragment.Containe
     public void onShowSingleImage(Message message) {
         getChildFragmentManager().beginTransaction()
                                  .add(R.id.fl__overlay_container,
-                                      SingleImageMessageFragment.newInstance(message),
-                                      SingleImageMessageFragment.TAG)
-                                 .addToBackStack(SingleImageMessageFragment.TAG)
+                                      ImageFragment.newInstance(message.getId()),
+                                     ImageFragment.TAG())
+                                 .addToBackStack(ImageFragment.TAG())
                                  .commit();
         getControllerFactory().getNavigationController().setRightPage(Page.SINGLE_MESSAGE, TAG);
-        getControllerFactory().getTrackingController().updateSessionAggregates(RangedAttribute.IMAGE_CONTENT_CLICKS);
     }
 
     @Override
@@ -199,7 +202,6 @@ public class MainTabletFragment extends BaseFragment<MainTabletFragment.Containe
                                  .addToBackStack(SingleImageUserFragment.TAG)
                                  .commit();
         getControllerFactory().getNavigationController().setRightPage(Page.SINGLE_MESSAGE, TAG);
-        getControllerFactory().getTrackingController().updateSessionAggregates(RangedAttribute.IMAGE_CONTENT_CLICKS);
     }
 
     @Override
@@ -208,7 +210,7 @@ public class MainTabletFragment extends BaseFragment<MainTabletFragment.Containe
     }
 
     @Override
-    public void onShowVideo(Uri uri) {
+    public void onShowVideo(URI uri) {
         getChildFragmentManager().beginTransaction()
                                  .add(R.id.fl__overlay_container,
                                       VideoPlayerFragment.newInstance(uri),
@@ -245,6 +247,79 @@ public class MainTabletFragment extends BaseFragment<MainTabletFragment.Containe
     @Override
     public void onAccentColorHasChanged(Object sender, int color) {
         confirmationMenu.setButtonColor(color);
+    }
+
+    @Override
+    public void onIncomingMessage(Message message) {
+        // ignore
+    }
+
+    @Override
+    public void onIncomingKnock(KnockingEvent knock) {
+        // ignore
+    }
+
+    @Override
+    public void onSyncError(ErrorsList.ErrorDescription error) {
+        if (getActivity() == null) {
+            return;
+        }
+
+        switch (error.getType()) {
+            case CANNOT_ADD_UNCONNECTED_USER_TO_CONVERSATION:
+            case CANNOT_ADD_USER_TO_FULL_CONVERSATION:
+            case CANNOT_CREATE_GROUP_CONVERSATION_WITH_UNCONNECTED_USER:
+                getChildFragmentManager().beginTransaction()
+                                         .setCustomAnimations(R.anim.fade_in, R.anim.fade_out, R.anim.fade_in, R.anim.fade_out)
+                                         .replace(R.id.fl_dialog_container,
+                                                  ConfirmationFragment.newMessageOnlyInstance(getResources().getString(R.string.in_app_notification__sync_error__create_group_convo__title),
+                                                                                              SyncErrorUtils.getGroupErrorMessage(getContext(), error),
+                                                                                              getResources().getString(R.string.in_app_notification__sync_error__create_convo__button),
+                                                                                              error.getId()),
+                                                  ConfirmationFragment.TAG
+                                                 )
+                                         .addToBackStack(ConfirmationFragment.TAG)
+                                         .commit();
+                break;
+            case CANNOT_ADD_USER_TO_FULL_CALL:
+            case CANNOT_CALL_CONVERSATION_WITH_TOO_MANY_MEMBERS:
+            case CANNOT_SEND_VIDEO:
+            case PLAYBACK_FAILURE:
+                ExceptionHandler.saveException(new RuntimeException("Unhandled error " + error.getType()), null);
+                error.dismiss();
+                break;
+            case CANNOT_SEND_MESSAGE_TO_UNVERIFIED_CONVERSATION:
+            case RECORDING_FAILURE:
+            case CANNOT_SEND_ASSET_FILE_NOT_FOUND:
+            case CANNOT_SEND_ASSET_TOO_LARGE:
+                // Handled in ConversationFragment
+                break;
+            default:
+                ExceptionHandler.saveException(new RuntimeException("Unexpected error " + error.getType()), null);
+
+        }
+    }
+
+    @Override
+    public void onDialogConfirm(String dialogId) {
+        getChildFragmentManager().popBackStackImmediate(ConfirmationFragment.TAG,
+                                                        FragmentManager.POP_BACK_STACK_INCLUSIVE);
+        dismissError(dialogId);
+    }
+
+    @Override
+    public void onDialogCancel(String dialogId) {
+        getChildFragmentManager().popBackStackImmediate(ConfirmationFragment.TAG,
+                                                        FragmentManager.POP_BACK_STACK_INCLUSIVE);
+        dismissError(dialogId);
+    }
+
+    private void dismissError(String errorId) {
+        if (getActivity() == null ||
+            getStoreFactory().isTornDown()) {
+            return;
+        }
+        getStoreFactory().getInAppNotificationStore().dismissError(errorId);
     }
 
     public interface Container {

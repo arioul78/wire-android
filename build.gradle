@@ -55,9 +55,11 @@ task licenseFormatAndroid(type: nl.javadude.gradle.plugins.license.License) {
 licenseFormat.dependsOn licenseFormatAndroid
 
 ext {
-    majorVersion = "2.28."
+    majorVersion = "2.32."
 
     compileSdkVersion = 24
+    // When upgrading minimum sdk you might want to search for occurrences of Build.VERSION_CODES.
+    // There are some classes with possibility of being simplified.
     minSdkVersion = 17
     targetSdkVersion = 23
     buildToolsVersion = '24.0.3'
@@ -73,18 +75,18 @@ ext {
     playServicesVersion = '10.0.1'
 
     audioVersion = System.getenv("AUDIO_VERSION") ?: '1.209.0@aar'
-    zMessagingDevVersionBase = '92.1375'
+    zMessagingDevVersionBase = '97.1463'
     zMessagingDevVersion = "${zMessagingDevVersionBase}@aar"
     // Release version number must be like this X.0(.Y)
-    zMessagingReleaseVersion = System.getenv("ZMESSAGING_VERSION") ?: '92.0.328@aar'
+    zMessagingReleaseVersion = System.getenv("ZMESSAGING_VERSION") ?: '97.1.339@aar'
 
-    avsVersion = '3.1.75@aar'
+    avsVersion = '3.4.100@aar'
     avsInternalVersion = avsVersion //leave this here in case we want to test specific AVS versions on internal
     avsName = 'avs'
     avsGroup = 'com.wire'
 
     // proprietary avs artifact configuration
-    customAvsVersion = '3.2.3@aar'
+    customAvsVersion = '3.4.67@aar'
     customAvsInternalVersion = customAvsVersion
     customAvsName = 'avs'
     customAvsGroup = 'com.wearezeta.avs'
@@ -119,7 +121,6 @@ ext {
 
 
             // Other
-            roundedimageview     : 'com.makeramen:roundedimageview:2.2.0',
             timber               : 'com.jakewharton.timber:timber:4.1.1',
             hockey               : 'net.hockeyapp.android:HockeySDK:3.7.2',
             threetenabp          : 'com.jakewharton.threetenabp:threetenabp:1.0.3',
@@ -127,11 +128,10 @@ ext {
             rebound              : 'com.facebook.rebound:rebound:0.3.8',
             supportpreferences   : 'net.xpece.android:support-preference:0.8.1',
 
-            // For spotify
-            spotifyAuth          : 'com.wire:spotify-auth:1.0.0-beta13@aar',
-
             // Internal
             audioNotifications   : "com.wire:audio-notifications:$audioVersion",
+
+            stetho               : 'com.facebook.stetho:stetho:1.4.2',
 
             // Test dependencies
             junit               : 'junit:junit:4.12',

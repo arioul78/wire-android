@@ -26,8 +26,7 @@ import android.support.v7.preference.Preference;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
-import com.waz.api.InitListener;
-import com.waz.api.Self;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
 import com.waz.zclient.controllers.tracking.events.profile.ResetPassword;
@@ -45,9 +44,11 @@ import com.waz.zclient.pages.main.profile.preferences.dialogs.ChangeEmailPrefere
 import com.waz.zclient.pages.main.profile.preferences.dialogs.ChangeUsernamePreferenceDialogFragment;
 import com.waz.zclient.pages.main.profile.preferences.dialogs.VerifyEmailPreferenceFragment;
 import com.waz.zclient.pages.main.profile.preferences.dialogs.VerifyPhoneNumberPreferenceFragment;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.utils.TextViewUtils;
 import com.waz.zclient.utils.StringUtils;
 import com.waz.zclient.utils.ViewUtils;
+
 import net.xpece.android.support.preference.EditTextPreference;
 
 public class AccountPreferences extends BasePreferenceFragment<AccountPreferences.Container> implements ProfileStoreObserver,
@@ -182,7 +183,7 @@ public class AccountPreferences extends BasePreferenceFragment<AccountPreference
         resetPasswordPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
-                getControllerFactory().getTrackingController().tagEvent(new ResetPassword(ResetPassword.Location.FROM_PROFILE));
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new ResetPassword(ResetPassword.Location.FROM_PROFILE));
                 return false;
             }
         });
@@ -218,17 +219,10 @@ public class AccountPreferences extends BasePreferenceFragment<AccountPreference
         super.onStart();
         getControllerFactory().getAccentColorController().addAccentColorObserver(this);
         getStoreFactory().getProfileStore().addProfileStoreAndUpdateObserver(this);
-        getStoreFactory().getZMessagingApiStore().getApi().onInit(new InitListener() {
-            @Override
-            public void onInitialized(Self user) {
-                picturePreference.setSelfUser(user);
-            }
-        });
     }
 
     @Override
     public void onStop() {
-        picturePreference.setSelfUser(null);
         getControllerFactory().getAccentColorController().removeAccentColorObserver(this);
         getStoreFactory().getProfileStore().removeProfileStoreObserver(this);
         super.onStop();
@@ -333,9 +327,8 @@ public class AccountPreferences extends BasePreferenceFragment<AccountPreference
                                       @Override
                                       public void onClick(DialogInterface dialog, int which) {
                                           // TODO: Remove old SignOut event https://wearezeta.atlassian.net/browse/AN-4232
-                                          getControllerFactory().getTrackingController().tagEvent(new SignOut());
-                                          getControllerFactory().getTrackingController().tagEvent(new LoggedOutEvent());
-                                          getControllerFactory().getSpotifyController().logout();
+                                          ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new SignOut());
+                                          ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new LoggedOutEvent());
                                           getControllerFactory().getUsernameController().logout();
                                           getStoreFactory().getZMessagingApiStore().logout();
                                       }
@@ -419,7 +412,7 @@ public class AccountPreferences extends BasePreferenceFragment<AccountPreference
     }
 
     private void changeUsername(String currentUsername, boolean cancellable) {
-        getControllerFactory().getTrackingController().tagEvent(new EditedUsernameEvent());
+        ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new EditedUsernameEvent());
         getChildFragmentManager().beginTransaction()
                                  .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
                                  .add(ChangeUsernamePreferenceDialogFragment.newInstance(currentUsername, cancellable),

@@ -44,6 +44,7 @@ class RecyclerCursor(val conv: ConvId, zms: ZMessaging, val adapter: RecyclerNot
   val index = messageFilter.fold(storage.msgsIndex(conv))(f => storage.msgsFilteredIndex(conv, f))
   val lastReadTime = Signal.future(index).flatMap(_.signals.lastReadTime)
   val countSignal = Signal[Int]()
+  val cursorLoaded = Signal[Boolean](false)
 
   private val window = new IndexWindow(this, adapter)
   private var closed = false
@@ -86,6 +87,7 @@ class RecyclerCursor(val conv: ConvId, zms: ZMessaging, val adapter: RecyclerNot
     verbose(s"setCursor: c: $c, count: ${c.size}")
     if (!closed) {
       self.cursor ! Some(c)
+      cursorLoaded ! true
       window.cursorChanged(c)
       notifyFromHistory(c.createTime)
       countSignal ! c.size
@@ -121,10 +123,8 @@ class RecyclerCursor(val conv: ConvId, zms: ZMessaging, val adapter: RecyclerNot
 
   def lastReadIndex() = cursor.currentValue.flatMap(_.map(_.lastReadIndex)).getOrElse(-1)
 
-  def positionForMessage(messageData: MessageData): Signal[Option[Int]] = {
-    cursor.map(_.fold(Option.empty[Int])(_.getPositionForMessage(messageData)))
-  }
-
+  def positionForMessage(messageData: MessageData) =
+    cursor.collect { case Some(c) => c } .head.flatMap(_.asyncIndexOf(messageData.time, binarySearch = true))
 }
 
 object RecyclerCursor {

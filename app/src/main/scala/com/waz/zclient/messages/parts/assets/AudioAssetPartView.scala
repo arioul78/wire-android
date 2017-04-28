@@ -41,7 +41,7 @@ class AudioAssetPartView(context: Context, attrs: AttributeSet, style: Int) exte
 
   val playControls = controller.getPlaybackControls(asset.map(_._1))
 
-  duration.map(_.toMillis.toInt).on(Threading.Ui)(progressBar.setMax)
+  duration.map(_.getOrElse(Duration.ZERO).toMillis.toInt).on(Threading.Ui)(progressBar.setMax)
   playControls.flatMap(_.playHead).map(_.toMillis.toInt).on(Threading.Ui)(progressBar.setProgress)
 
   val isPlaying = playControls.flatMap(_.isPlaying)
@@ -56,7 +56,7 @@ class AudioAssetPartView(context: Context, attrs: AttributeSet, style: Int) exte
       if (pl) controller.onAudioPlayed ! a
   }
 
-  assetActionButton.onClicked.filter(_ == DeliveryState.Complete) { _ =>
+  assetActionButton.onClicked.filter(state => state == DeliveryState.Complete || state == DeliveryState.DownloadFailed) { _ =>
     playControls.currentValue.foreach(_.playOrPause())
   }
 

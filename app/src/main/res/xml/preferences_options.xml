@@ -30,6 +30,21 @@
         />
 
     <PreferenceCategory
+        android:key="@string/pref_options_calls_category_key"
+        android:title="@string/pref_options_calls_category_title"
+        android:layout="@layout/preference_category"
+        >
+
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="@string/pref_options_vbr_key"
+            android:title="@string/pref_options_vbr_title"
+            android:summary="@string/pref_options_vbr_summary"
+        />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
         android:key="@string/pref_options_alerts_category_key"
         android:title="@string/pref_options_alerts_category_title"
         android:layout="@layout/preference_category"
@@ -117,14 +132,6 @@
             android:entryValues="@array/zms_image_download_values"
             android:key="@string/pref_options_image_download_key"
             android:title="@string/pref_options_image_download_title"
-            />
-
-        <Preference
-            android:defaultValue="false"
-            android:key="@string/pref_options_spotify_key"
-            android:title="@string/pref_options_spotify_title"
-            android:summary="@string/pref_options_spotify_summary"
-            android:layout="@layout/preference_bottom_padding"
             />
 
     </PreferenceCategory>

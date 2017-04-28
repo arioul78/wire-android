@@ -22,6 +22,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,9 +33,7 @@ import com.waz.api.ConversationsList;
 import com.waz.api.CoreList;
 import com.waz.api.IConversation;
 import com.waz.zclient.R;
-import com.waz.zclient.controllers.streammediaplayer.IStreamMediaPlayerController;
 import com.waz.zclient.core.stores.connect.InboxLinkConversation;
-import com.waz.zclient.core.stores.network.INetworkStore;
 import com.waz.zclient.pages.main.conversation.ConversationUtils;
 import com.waz.zclient.pages.main.conversationlist.views.ConversationCallback;
 import com.waz.zclient.pages.main.conversationlist.views.listview.SwipeListView;
@@ -77,8 +76,6 @@ public class ConversationListAdapter extends BaseAdapter {
     private ConversationsList conversationList;
     private long translationDelay;
 
-    private IStreamMediaPlayerController streamMediaPlayerController;
-    private INetworkStore networkStore;
     private RightIndicatorView.ConversationActionCallback conversationActionCallback;
 
     private ConversationCallback conversationCallback;
@@ -216,16 +213,8 @@ public class ConversationListAdapter extends BaseAdapter {
         super.notifyDataSetChanged();
     }
 
-    public void setStreamMediaPlayerController(IStreamMediaPlayerController streamMediaPlayerController) {
-        this.streamMediaPlayerController = streamMediaPlayerController;
-    }
-
     public void setConversationActionCallback(RightIndicatorView.ConversationActionCallback conversationActionCallback) {
         this.conversationActionCallback = conversationActionCallback;
-    }
-
-    public void setNetworkStore(INetworkStore networkStore) {
-        this.networkStore = networkStore;
     }
 
     @Override
@@ -343,18 +332,14 @@ public class ConversationListAdapter extends BaseAdapter {
 
         if (convertView == null || !(convertView instanceof ConversationListRow)) {
             conversationListRowItem = new ConversationListRow(parent.getContext());
-            conversationListRowItem.setStreamMediaPlayerController(streamMediaPlayerController);
             conversationListRowItem.setConversationActionCallback(conversationActionCallback);
-            conversationListRowItem.setNetworkStore(networkStore);
         } else {
             conversationListRowItem = (ConversationListRow) convertView;
 
             // needs redraw due to animation changes
             if (conversationListRowItem.needsRedraw()) {
                 conversationListRowItem = new ConversationListRow(parent.getContext());
-                conversationListRowItem.setStreamMediaPlayerController(streamMediaPlayerController);
                 conversationListRowItem.setConversationActionCallback(conversationActionCallback);
-                conversationListRowItem.setNetworkStore(networkStore);
             }
         }
 
@@ -368,7 +353,13 @@ public class ConversationListAdapter extends BaseAdapter {
         final IConversation conversation = getItem(position);
 
         if (isArchived(position)) {
-            conversationListRowItem.setBackgroundColor(parent.getResources().getColor(R.color.list_archive_box__background_color));
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                //noinspection deprecation
+                conversationListRowItem.setBackgroundColor(parent.getResources().getColor(R.color.list_archive_box__background_color));
+            } else {
+                conversationListRowItem.setBackgroundColor(parent.getResources().getColor(R.color.list_archive_box__background_color,
+                                                           conversationListRowItem.getContext().getTheme()));
+            }
         } else {
             conversationListRowItem.setBackgroundColor(Color.TRANSPARENT);
         }
@@ -462,8 +453,6 @@ public class ConversationListAdapter extends BaseAdapter {
     }
 
     public void tearDown() {
-        networkStore = null;
-        streamMediaPlayerController = null;
         if (listView == null) {
             return;
         }

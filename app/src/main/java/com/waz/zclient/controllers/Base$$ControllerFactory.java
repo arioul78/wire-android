@@ -20,7 +20,6 @@ package com.waz.zclient.controllers;
 import android.app.Activity;
 import android.content.Context;
 import android.view.View;
-
 import com.waz.zclient.controllers.accentcolor.AccentColorController;
 import com.waz.zclient.controllers.accentcolor.IAccentColorController;
 import com.waz.zclient.controllers.background.BackgroundController;
@@ -64,13 +63,8 @@ import com.waz.zclient.controllers.sharing.ISharingController;
 import com.waz.zclient.controllers.sharing.SharingController;
 import com.waz.zclient.controllers.singleimage.ISingleImageController;
 import com.waz.zclient.controllers.singleimage.SingleImageController;
-import com.waz.zclient.controllers.spotify.ISpotifyController;
-import com.waz.zclient.controllers.spotify.SpotifyController;
-import com.waz.zclient.controllers.streammediaplayer.IStreamMediaPlayerController;
-import com.waz.zclient.controllers.streammediaplayer.StreamMediaPlayerController;
 import com.waz.zclient.controllers.theme.IThemeController;
 import com.waz.zclient.controllers.theme.ThemeController;
-import com.waz.zclient.controllers.tracking.ITrackingController;
 import com.waz.zclient.controllers.usernames.IUsernamesController;
 import com.waz.zclient.controllers.usernames.UsernamesController;
 import com.waz.zclient.controllers.userpreferences.IUserPreferencesController;
@@ -131,13 +125,7 @@ public abstract class Base$$ControllerFactory implements IControllerFactory {
 
   protected ISingleImageController singleImageController;
 
-  protected ISpotifyController spotifyController;
-
-  protected IStreamMediaPlayerController streamMediaPlayerController;
-
   protected IThemeController themeController;
-
-  protected ITrackingController trackingController;
 
   protected IUserPreferencesController userPreferencesController;
 
@@ -170,8 +158,6 @@ public abstract class Base$$ControllerFactory implements IControllerFactory {
     }
     return sharingController;
   }
-
-  protected abstract void initTrackingController();
 
   @Override
   public IPasswordController getPasswordController() {
@@ -282,21 +268,9 @@ public abstract class Base$$ControllerFactory implements IControllerFactory {
       singleImageController.tearDown();
       singleImageController = null;
     }
-    if (spotifyController != null) {
-      spotifyController.tearDown();
-      spotifyController = null;
-    }
-    if (streamMediaPlayerController != null) {
-      streamMediaPlayerController.tearDown();
-      streamMediaPlayerController = null;
-    }
     if (themeController != null) {
       themeController.tearDown();
       themeController = null;
-    }
-    if (trackingController != null) {
-      trackingController.tearDown();
-      trackingController = null;
     }
     if (userPreferencesController != null) {
       userPreferencesController.tearDown();
@@ -327,15 +301,6 @@ public abstract class Base$$ControllerFactory implements IControllerFactory {
       usernamesController = null;
     }
     this.context = null;
-  }
-
-  @Override
-  public IStreamMediaPlayerController getStreamMediaPlayerController() {
-    verifyLifecycle();
-    if (streamMediaPlayerController == null) {
-      streamMediaPlayerController = new StreamMediaPlayerController(this.context, getSpotifyController());
-    }
-    return streamMediaPlayerController;
   }
 
   @Override
@@ -377,13 +342,6 @@ public abstract class Base$$ControllerFactory implements IControllerFactory {
       navigationController = new NavigationController(this.context);
     }
     return navigationController;
-  }
-
-  @Override
-  public ITrackingController getTrackingController() {
-    verifyLifecycle();
-    initTrackingController();
-    return trackingController;
   }
 
   @Override
@@ -431,7 +389,7 @@ public abstract class Base$$ControllerFactory implements IControllerFactory {
   public IPickUserController getPickUserController() {
     verifyLifecycle();
     if (pickUserController == null) {
-      pickUserController = new PickUserController(getTrackingController(), this.context);
+      pickUserController = new PickUserController(this.context);
     }
     return pickUserController;
   }
@@ -461,15 +419,6 @@ public abstract class Base$$ControllerFactory implements IControllerFactory {
       vibratorController = new VibratorController(this.context);
     }
     return vibratorController;
-  }
-
-  @Override
-  public ISpotifyController getSpotifyController() {
-    verifyLifecycle();
-    if (spotifyController == null) {
-      spotifyController = new SpotifyController(this.context, getUserPreferencesController());
-    }
-    return spotifyController;
   }
 
   @Override
@@ -545,8 +494,6 @@ public abstract class Base$$ControllerFactory implements IControllerFactory {
   public void setActivity(Activity activity) {
     getGlobalLayoutController().setActivity(activity);
     getOrientationController().setActivity(activity);
-    getSpotifyController().setActivity(activity);
-    getTrackingController().setActivity(activity);
     getUsernameController().setActivity(activity);
   }
 

@@ -19,10 +19,10 @@ package com.waz.zclient.core.stores.appentry;
 
 import com.waz.zclient.core.R;
 
-//TODO clean this up as specified in https://wearezeta.atlassian.net/browse/AN-2026
 public enum AppEntryError {
     EMAIL_EXISTS                    (409, "key-exists",     R.string.new_reg_email_exists_header, R.string.new_reg_email_exists_message),
     EMAIL_INVALID                   (400, "invalid-email",  R.string.new_reg_email_invalid_header, R.string.new_reg_email_invalid_message),
+    EMAIL_INVALID_REQUEST           (400, "invalid-request",R.string.new_reg_email_invalid_header, R.string.new_reg_email_invalid_message),
     EMAIL_GENERIC_ERROR             (0,   "",               R.string.new_reg_email_generic_error_header, R.string.new_reg_email_generic_error_message),
     EMAIL_REGISTER_GENERIC_ERROR    (0,   "",               R.string.new_reg_email_register_generic_error_header, R.string.new_reg_email_register_generic_error_message /* something wrong with email, name, or password */),
     EMAIL_INVALID_LOGIN_CREDENTIALS (403, "",               R.string.new_reg_email_invalid_login_credentials_header, R.string.new_reg_email_invalid_login_credentials_message/* invalid email / password combination*/),
@@ -38,6 +38,8 @@ public enum AppEntryError {
     ADD_TO_PROFILE_GENERIC_ERROR    (0, "",                 R.string.profile_generic_error_header, R.string.profile_generic_error_message),
     TOO_MANY_ATTEMPTS               (429, "",               R.string.new_reg_phone_too_man_attempts_header, R.string.new_reg_phone_too_man_attempts_message /*too many login attempts*/),
     SERVER_CONNECTIVITY_ERROR       (600, "",               R.string.new_reg_server_connectivity_error_header, R.string.new_reg_server_connectivity_error_message),
+    PHONE_BUDGET_EXHAUSTED          (403, "phone-budget-exhausted", R.string.new_reg_phone_budget_exhausted_title, R.string.new_reg_phone_budget_exhausted_message),
+    LOGIN_GENERIC_ERROR             (0,   "",               R.string.new_sign_in_generic_error_header, R.string.new_sign_in_generic_error_message),
 
     NO_INTERNET                     (598, "",               R.string.new_reg_internet_connectivity_error_header, R.string.new_reg_internet_connectivity_error_message),
     PHONE_INVALID                   (400, "invalid-phone",  -1, -1), /* not displayed to user */

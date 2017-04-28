@@ -32,7 +32,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Interpolator;
-
 import com.waz.api.ConversationsList;
 import com.waz.api.IConversation;
 import com.waz.api.ImageAsset;
@@ -42,9 +41,8 @@ import com.waz.api.OtrClient;
 import com.waz.api.SyncState;
 import com.waz.api.User;
 import com.waz.api.UsersList;
-import com.waz.api.Verification;
 import com.waz.model.MessageData;
-import com.waz.zclient.BaseScalaActivity;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.collections.CollectionsObserver;
@@ -84,6 +82,7 @@ import com.waz.zclient.pages.main.pickuser.controller.IPickUserController;
 import com.waz.zclient.pages.main.pickuser.controller.PickUserControllerScreenObserver;
 import com.waz.zclient.pages.main.profile.camera.CameraContext;
 import com.waz.zclient.pages.main.profile.camera.CameraFragment;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.animation.interpolators.penner.Quart;
 import com.waz.zclient.ui.utils.KeyboardUtils;
 import com.waz.zclient.ui.utils.MathUtils;
@@ -178,7 +177,6 @@ public class RootFragment extends BaseFragment<RootFragment.Container> implement
 
         boolean isInLandscape = ViewUtils.isInLandscape(newConfig);
         getControllerFactory().getNavigationController().setIsLandscape(isInLandscape);
-        getStoreFactory().getInAppNotificationStore().setIsLandscape(isInLandscape);
 
         slidingPaneLayout.setSideBarWidth(newConfig);
         if (isInLandscape) {
@@ -351,13 +349,6 @@ public class RootFragment extends BaseFragment<RootFragment.Container> implement
     }
 
     @Override
-    public void onVerificationStateChanged(String conversationId,
-                                           Verification previousVerification,
-                                           Verification currentVerification) {
-
-    }
-
-    @Override
     public void onConversationListUpdated(ConversationsList conversationsList) {
     }
 
@@ -388,7 +379,7 @@ public class RootFragment extends BaseFragment<RootFragment.Container> implement
     }
 
     private CollectionController getCollectionController() {
-        return ((BaseScalaActivity) getActivity()).injectJava(CollectionController.class);
+        return ((BaseActivity) getActivity()).injectJava(CollectionController.class);
     }
 
     @Override
@@ -509,7 +500,7 @@ public class RootFragment extends BaseFragment<RootFragment.Container> implement
         getStoreFactory().getConversationStore().sendMessage(imageAsset);
 
         // Tablet doesn't have keyboard camera interface
-        TrackingUtils.onSentPhotoMessage(getControllerFactory().getTrackingController(),
+        TrackingUtils.onSentPhotoMessage(((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class),
                                          getStoreFactory().getConversationStore().getCurrentConversation(),
                                          imageFromCamera ? SentPictureEvent.Source.CAMERA
                                                          : SentPictureEvent.Source.GALLERY,

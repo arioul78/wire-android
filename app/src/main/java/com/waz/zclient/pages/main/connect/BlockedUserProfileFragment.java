@@ -25,9 +25,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.widget.TextView;
-import com.waz.api.CommonConnections;
 import com.waz.api.IConversation;
 import com.waz.api.User;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
 import com.waz.zclient.controllers.navigation.NavigationController;
@@ -39,6 +39,7 @@ import com.waz.zclient.pages.main.participants.ProfileAnimation;
 import com.waz.zclient.pages.main.participants.ProfileSourceAnimation;
 import com.waz.zclient.pages.main.participants.ProfileTabletAnimation;
 import com.waz.zclient.pages.main.participants.dialog.DialogLaunchMode;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.animation.fragment.FadeAnimation;
 import com.waz.zclient.ui.theme.ThemeUtils;
 import com.waz.zclient.ui.views.UserDetailsView;
@@ -272,17 +273,10 @@ public class BlockedUserProfileFragment extends BaseFragment<BlockedUserProfileF
 
         imageAssetImageViewProfile.connectImageAsset(user.getPicture());
 
-        // Load common users
-        getStoreFactory().getConnectStore().loadCommonConnections(user.getCommonConnections());
         nameTextView.setText(user.getName());
         userDetailsView.setUser(user);
 
         setFooterMenu(user);
-    }
-
-    @Override
-    public void onCommonConnectionsUpdated(CommonConnections commonConnections) {
-
     }
 
     @Override
@@ -389,7 +383,7 @@ public class BlockedUserProfileFragment extends BaseFragment<BlockedUserProfileF
 
     private void unblockUser(User user) {
         goToConversationWithUser = true;
-        getControllerFactory().getTrackingController().tagEvent(new UnblockingEvent());
+        ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new UnblockingEvent());
         IConversation conversation = getStoreFactory().getConnectStore().unblockUser(user);
         if (conversation != null) {
             // Note! important to pass conversation returned by unblockUser() instead of user.getConversation()

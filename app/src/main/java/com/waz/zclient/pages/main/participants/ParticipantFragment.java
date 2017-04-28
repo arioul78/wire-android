@@ -22,6 +22,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.TimeInterpolator;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -39,7 +40,7 @@ import com.waz.api.OtrClient;
 import com.waz.api.SyncState;
 import com.waz.api.User;
 import com.waz.api.UsersList;
-import com.waz.api.Verification;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.confirmation.ConfirmationCallback;
@@ -58,7 +59,6 @@ import com.waz.zclient.controllers.tracking.events.group.LeaveGroupConversationE
 import com.waz.zclient.controllers.tracking.events.group.RemoveContactEvent;
 import com.waz.zclient.core.api.scala.ModelObserver;
 import com.waz.zclient.core.controllers.tracking.attributes.ConversationType;
-import com.waz.zclient.core.controllers.tracking.attributes.RangedAttribute;
 import com.waz.zclient.core.stores.connect.IConnectStore;
 import com.waz.zclient.core.stores.connect.InboxLinkConversation;
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester;
@@ -77,6 +77,7 @@ import com.waz.zclient.pages.main.participants.dialog.DialogLaunchMode;
 import com.waz.zclient.pages.main.pickuser.PickUserFragment;
 import com.waz.zclient.pages.main.pickuser.controller.IPickUserController;
 import com.waz.zclient.pages.main.pickuser.controller.PickUserControllerScreenObserver;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.animation.interpolators.penner.Expo;
 import com.waz.zclient.ui.animation.interpolators.penner.Linear;
 import com.waz.zclient.ui.animation.interpolators.penner.Quart;
@@ -234,7 +235,12 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
         bodyContainer = ViewUtils.getView(view, R.id.fl__participant__container);
         loadingIndicatorView = ViewUtils.getView(view, R.id.liv__participants__loading_indicator);
 
-        loadingIndicatorView.setColor(getResources().getColor(R.color.people_picker__loading__color));
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            //noinspection deprecation
+            loadingIndicatorView.setColor(getResources().getColor(R.color.people_picker__loading__color));
+        } else {
+            loadingIndicatorView.setColor(getResources().getColor(R.color.people_picker__loading__color, getContext().getTheme()));
+        }
 
         participantsContainerView = ViewUtils.getView(view, R.id.ll__participant__container);
         pickUserContainerView = ViewUtils.getView(view, R.id.fl__add_to_conversation__pickuser__container);
@@ -312,7 +318,6 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
             conversationChangeRequester == ConversationChangeRequester.START_CONVERSATION_FOR_VIDEO_CALL ||
             conversationChangeRequester == ConversationChangeRequester.START_CONVERSATION_FOR_CALL ||
             conversationChangeRequester == ConversationChangeRequester.START_CONVERSATION_FOR_CAMERA) {
-            getStoreFactory().getInAppNotificationStore().setUserLookingAtPeoplePicker(false);
             getChildFragmentManager().popBackStackImmediate(PickUserFragment.TAG,
                                                             FragmentManager.POP_BACK_STACK_INCLUSIVE);
             getControllerFactory().getPickUserController().hidePickUserWithoutAnimations(
@@ -328,13 +333,6 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
 
     @Override
     public void onMenuConversationHasChanged(IConversation fromConversation) {
-
-    }
-
-    @Override
-    public void onVerificationStateChanged(String conversationId,
-                                           Verification previousVerification,
-                                           Verification currentVerification) {
 
     }
 
@@ -425,12 +423,12 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
                     getControllerFactory().getConversationScreenController().hideParticipants(false, true);
                 }
 
-                getControllerFactory().getTrackingController().tagEvent(new BlockingEvent(BlockingEvent.ConformationResponse.BLOCK));
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new BlockingEvent(BlockingEvent.ConformationResponse.BLOCK));
             }
 
             @Override
             public void negativeButtonClicked() {
-                getControllerFactory().getTrackingController().tagEvent(new BlockingEvent(BlockingEvent.ConformationResponse.CANCEL));
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new BlockingEvent(BlockingEvent.ConformationResponse.CANCEL));
             }
 
             @Override
@@ -445,7 +443,7 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
         String cancel = getString(R.string.confirmation_menu__cancel);
         OptionsTheme optionsTheme = getControllerFactory().getThemeController().getThemeDependentOptionsTheme();
 
-        ConfirmationRequest request = new ConfirmationRequest.Builder(IConfirmationController.BLOCK_CONNECTED)
+        ConfirmationRequest request = new ConfirmationRequest.Builder()
             .withHeader(header)
             .withMessage(text)
             .withPositiveButton(confirm)
@@ -484,7 +482,7 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
                 }
 
                 if (!confirmed) {
-                    getControllerFactory().getTrackingController().tagEvent(new DeleteConversationEvent(ConversationType.getValue(conversation),
+                    ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new DeleteConversationEvent(ConversationType.getValue(conversation),
                                                                                                         DeleteConversationEvent.Context.LIST,
                                                                                                         DeleteConversationEvent.Response.CANCEL));
                     return;
@@ -493,7 +491,7 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
                 boolean deleteCurrentConversation = conversation != null && currentConversation != null &&
                                                     conversation.getId().equals(currentConversation.getId());
                 getStoreFactory().getConversationStore().deleteConversation(conversation, checkboxIsSelected);
-                getControllerFactory().getTrackingController().tagEvent(new DeleteConversationEvent(ConversationType.getValue(
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new DeleteConversationEvent(ConversationType.getValue(
                     conversation),
                                                                                                     DeleteConversationEvent.Context.PARTICIPANTS,
                                                                                                     DeleteConversationEvent.Response.DELETE));
@@ -510,7 +508,7 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
         String confirm = getString(R.string.confirmation_menu__confirm_delete);
         String cancel = getString(R.string.confirmation_menu__cancel);
 
-        ConfirmationRequest.Builder builder = new ConfirmationRequest.Builder(IConfirmationController.REMOVE_USER_FROM_CONVERSATION)
+        ConfirmationRequest.Builder builder = new ConfirmationRequest.Builder()
             .withHeader(header)
             .withMessage(text)
             .withPositiveButton(confirm)
@@ -550,9 +548,9 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
                         return;
                     }
                     if (archive) {
-                        getControllerFactory().getTrackingController().tagEvent(new ArchivedConversationEvent(conversation.getType().toString()));
+                        ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new ArchivedConversationEvent(conversation.getType().toString()));
                     } else {
-                        getControllerFactory().getTrackingController().tagEvent(new UnarchivedConversationEvent(conversation.getType().toString()));
+                        ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new UnarchivedConversationEvent(conversation.getType().toString()));
                     }
 
                 }
@@ -623,7 +621,6 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
         }
 
         if (getControllerFactory().getPickUserController().isShowingPickUser(getCurrentPickerDestination())) {
-            getStoreFactory().getInAppNotificationStore().setUserLookingAtPeoplePicker(false);
             getControllerFactory().getPickUserController().hidePickUser(getCurrentPickerDestination(), true);
             return true;
         }
@@ -700,7 +697,6 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
 
     @Override
     public void onAddPeopleToConversation() {
-        getStoreFactory().getInAppNotificationStore().setUserLookingAtPeoplePicker(true);
         getControllerFactory().getPickUserController().showPickUser(IPickUserController.Destination.PARTICIPANTS, null);
     }
 
@@ -913,7 +909,7 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
                     @Override
                     public void run() {
                         getStoreFactory().getConversationStore().getCurrentConversation().removeMember(user);
-                        getControllerFactory().getTrackingController().tagEvent(new RemoveContactEvent(true,
+                        ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new RemoveContactEvent(true,
                                                                                                        getParticipantsCount()));
                     }
                 });
@@ -921,7 +917,7 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
 
             @Override
             public void negativeButtonClicked() {
-                getControllerFactory().getTrackingController().tagEvent(new RemoveContactEvent(false,
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new RemoveContactEvent(false,
                                                                                                getParticipantsCount()));
             }
 
@@ -935,7 +931,7 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
         String confirm = getString(R.string.confirmation_menu__confirm_remove);
         String cancel = getString(R.string.confirmation_menu__cancel);
 
-        ConfirmationRequest request = new ConfirmationRequest.Builder(IConfirmationController.REMOVE_USER_FROM_CONVERSATION)
+        ConfirmationRequest request = new ConfirmationRequest.Builder()
             .withHeader(header)
             .withMessage(text)
             .withPositiveButton(confirm)
@@ -1021,7 +1017,6 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
     public void onSelectedUsers(List<User> users, ConversationChangeRequester requester) {
         IConversation currentConversation = getStoreFactory().getConversationStore().getCurrentConversation();
         if (currentConversation.getType() == IConversation.Type.ONE_TO_ONE) {
-            getStoreFactory().getInAppNotificationStore().setUserLookingAtPeoplePicker(false);
             getControllerFactory().getPickUserController().hidePickUser(getCurrentPickerDestination(), false);
             dismissDialog();
             getStoreFactory().getConversationStore().createGroupConversation(users, requester);
@@ -1032,11 +1027,10 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
                                           R.string.conversation__create_group_conversation__no_network__button,
                                           null, true);
             }
-            getControllerFactory().getTrackingController().tagEvent(new CreatedGroupConversationEvent(true,
+            ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new CreatedGroupConversationEvent(true,
                                                                                                       (users.size() + 1)));
         } else if (currentConversation.getType() == IConversation.Type.GROUP) {
             currentConversation.addMembers(users);
-            getStoreFactory().getInAppNotificationStore().setUserLookingAtPeoplePicker(false);
             getControllerFactory().getPickUserController().hidePickUser(getCurrentPickerDestination(), false);
             if (!getStoreFactory().getNetworkStore().hasInternetConnection()) {
                 ViewUtils.showAlertDialog(getActivity(),
@@ -1045,9 +1039,8 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
                                           R.string.conversation__add_user__no_network__button,
                                           null, true);
             }
-            getControllerFactory().getTrackingController().tagEvent(new AddedMemberToGroupEvent(getParticipantsCount(), users.size()));
+            ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new AddedMemberToGroupEvent(getParticipantsCount(), users.size()));
         }
-        getControllerFactory().getTrackingController().updateSessionAggregates(RangedAttribute.USERS_ADDED_TO_CONVERSATIONS);
     }
 
     @Override
@@ -1202,7 +1195,7 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
         ConfirmationCallback callback = new TwoButtonConfirmationCallback() {
             @Override
             public void positiveButtonClicked(boolean checkboxIsSelected) {
-                getControllerFactory().getTrackingController().tagEvent(new LeaveGroupConversationEvent(true,
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new LeaveGroupConversationEvent(true,
                                                                                                         getStoreFactory().getConversationStore().getCurrentConversation().getUsers().size()));
 
                 getStoreFactory().getConversationStore().leave(conversation);
@@ -1215,7 +1208,7 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
 
             @Override
             public void negativeButtonClicked() {
-                getControllerFactory().getTrackingController().tagEvent(new LeaveGroupConversationEvent(false,
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new LeaveGroupConversationEvent(false,
                                                                                                         getStoreFactory().getConversationStore().getCurrentConversation().getUsers().size()));
             }
 
@@ -1229,7 +1222,7 @@ public class ParticipantFragment extends BaseFragment<ParticipantFragment.Contai
         String confirm = getString(R.string.confirmation_menu__confirm_leave);
         String cancel = getString(R.string.confirmation_menu__cancel);
 
-        ConfirmationRequest request = new ConfirmationRequest.Builder(IConfirmationController.LEAVE_CONVERSATION)
+        ConfirmationRequest request = new ConfirmationRequest.Builder()
             .withHeader(header)
             .withMessage(text)
             .withPositiveButton(confirm)

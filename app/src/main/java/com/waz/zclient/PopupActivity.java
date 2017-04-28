@@ -24,6 +24,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import com.waz.zclient.core.controllers.tracking.events.notifications.OpenedQuickReplyEvent;
 import com.waz.zclient.pages.main.popup.QuickReplyFragment;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.utils.KeyboardUtils;
 import com.waz.zclient.utils.IntentUtils;
 import com.waz.zclient.utils.ViewUtils;
@@ -53,7 +54,16 @@ public class PopupActivity extends BaseActivity implements QuickReplyFragment.Co
             finish();
             return;
         }
+        showQuickReplyFragment(intent);
+    }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        showQuickReplyFragment(intent);
+    }
+
+    private void showQuickReplyFragment(Intent intent) {
         final String conversationId = IntentUtils.getLaunchConversationId(intent);
         if (conversationId == null) {
             finish();
@@ -61,20 +71,20 @@ public class PopupActivity extends BaseActivity implements QuickReplyFragment.Co
         }
 
         getSupportFragmentManager().beginTransaction()
-                                   .replace(R.id.fl__quick_reply__container,
-                                            QuickReplyFragment.newInstance(conversationId),
-                                            QuickReplyFragment.TAG)
-                                   .commit();
+            .replace(R.id.fl__quick_reply__container,
+                QuickReplyFragment.newInstance(conversationId),
+                QuickReplyFragment.TAG)
+            .commit();
     }
 
     @Override
-    protected int getBaseTheme() {
+    public int getBaseTheme() {
         return R.style.Theme_Popup;
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        getControllerFactory().getTrackingController().tagEvent(new OpenedQuickReplyEvent());
+        injectJava(GlobalTrackingController.class).tagEvent(new OpenedQuickReplyEvent());
     }
 }

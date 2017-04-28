@@ -80,6 +80,8 @@ public enum Attribute {
     TYPE("type"),
     METHOD("method"),
     OUTCOME("outcome"),
+    SECTION("section"),
+    POSITION("position"),
     ERROR("error"),
     ERROR_MESSAGE("error_message"),
     VALUE("value"),
@@ -87,6 +89,7 @@ public enum Attribute {
     EFFECT("effect"),
     LENGTH("length"),
     BY_USERNAME("by_username_only"),
+    DURATION("duration"),
 
     AVS("avs"),
 
@@ -111,8 +114,8 @@ public enum Attribute {
     RECEIVED_PONGS("received_pongs"),
     PING_INTERVAL("ping_interval"),
 
-    IS_EMPTY("is_empty")
-
+    IS_EMPTY("is_empty"),
+    WITH_SEARCH_RESULT("with_search_result")
     ;
 
 

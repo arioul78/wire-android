@@ -19,9 +19,10 @@ package com.waz.zclient.views
 
 import android.animation.ValueAnimator
 import android.animation.ValueAnimator.AnimatorUpdateListener
+import android.content.Context
 import android.graphics._
 import android.graphics.drawable.Drawable
-import android.net.Uri
+import android.renderscript.{Allocation, Element, RenderScript, ScriptIntrinsicBlur}
 import com.waz.model.AssetData.{IsImage, IsVideo}
 import com.waz.model._
 import com.waz.service.ZMessaging
@@ -37,6 +38,7 @@ import com.waz.zclient.views.ImageAssetDrawable.{RequestBuilder, ScaleType, Stat
 import com.waz.zclient.views.ImageController._
 import com.waz.zclient.{Injectable, Injector}
 import com.waz.ZLog.ImplicitTag._
+import com.waz.utils.wrappers.URI
 
 //TODO could merge with logic from the ChatheadView to make a very general drawable for our app
 class ImageAssetDrawable(
@@ -64,12 +66,12 @@ class ImageAssetDrawable(
     }
   })
 
-  val state = for {
+  val state = (for {
     im <- src
     d <- dims if d.width > 0
     p <- padding
     state <- bitmapState(im, d.width - p.l - p.r)
-  } yield state
+  } yield state).disableAutowiring()
 
   state.on(Threading.Ui) { st =>
     invalidateSelf()
@@ -198,6 +200,7 @@ object ImageAssetDrawable {
   object RequestBuilder {
     val Regular: RequestBuilder = BitmapRequest.Regular(_)
     val Single: RequestBuilder = BitmapRequest.Single(_)
+    val Round: RequestBuilder = BitmapRequest.Round(_)
   }
 
   sealed trait State {
@@ -228,6 +231,36 @@ class RoundedImageAssetDrawable (
   }
 }
 
+class BlurredImageAssetDrawable(
+                                 src: Signal[ImageSource],
+                                 scaleType: ScaleType = ScaleType.FitXY,
+                                 request: RequestBuilder = RequestBuilder.Regular,
+                                 background: Option[Drawable] = None,
+                                 blurRadius: Float = 0,
+                                 context: Context
+                               )(implicit inj: Injector, eventContext: EventContext) extends ImageAssetDrawable(src, scaleType, request, background) {
+
+  override protected def drawBitmap(canvas: Canvas, bm: Bitmap, matrix: Matrix, bitmapPaint: Paint): Unit = {
+    val renderScript = RenderScript.create(context)
+    val blurInput = Allocation.createFromBitmap(renderScript, bm)
+    val blurOutput = Allocation.createFromBitmap(renderScript, bm)
+
+    val blur = ScriptIntrinsicBlur.create(renderScript, Element.U8_4(renderScript))
+    blur.setInput(blurInput)
+    blur.setRadius(blurRadius)
+    blur.forEach(blurOutput)
+
+    blurOutput.copyTo(bm)
+
+    blurInput.destroy()
+    blurOutput.destroy()
+    renderScript.destroy()
+
+    canvas.drawBitmap(bm, matrix, bitmapPaint)
+  }
+
+}
+
 class ImageController(implicit inj: Injector) extends Injectable {
 
   val zMessaging = inject[Signal[ZMessaging]]
@@ -250,7 +283,7 @@ class ImageController(implicit inj: Injector) extends Injectable {
       res <- BitmapSignal(data, req, zms.imageLoader, zms.imageCache)
     } yield res
 
-  def imageSignal(uri: Uri, req: BitmapRequest): Signal[BitmapResult] =
+  def imageSignal(uri: URI, req: BitmapRequest): Signal[BitmapResult] =
     BitmapSignal(AssetData(source = Some(uri)), req, ZMessaging.currentGlobal.imageLoader, ZMessaging.currentGlobal.imageCache)
 
   def imageSignal(data: AssetData, req: BitmapRequest): Signal[BitmapResult] =
@@ -268,5 +301,5 @@ object ImageController {
   sealed trait ImageSource
   case class WireImage(id: AssetId) extends ImageSource
   case class DataImage(data: AssetData) extends ImageSource
-  case class ImageUri(uri: Uri) extends ImageSource
+  case class ImageUri(uri: URI) extends ImageSource
 }

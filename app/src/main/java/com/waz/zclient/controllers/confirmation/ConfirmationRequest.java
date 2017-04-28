@@ -22,8 +22,6 @@ import android.text.TextUtils;
 import com.waz.zclient.ui.theme.OptionsTheme;
 
 public class ConfirmationRequest {
-    @IConfirmationController.ConfirmationMenuRequestType
-    public int requester;
     public String header;
     public String message;
     public String positiveButton;
@@ -32,6 +30,7 @@ public class ConfirmationRequest {
     public String checkboxLabel;
     public boolean checkboxSelectedByDefault;
     public int headerIconRes;
+    public int backgroundImage;
     public ConfirmationCallback callback;
     public OptionsTheme optionsTheme;
 
@@ -41,9 +40,8 @@ public class ConfirmationRequest {
 
         private final ConfirmationRequest confirmationRequest;
 
-        public Builder(@IConfirmationController.ConfirmationMenuRequestType int requester) {
+        public Builder() {
             confirmationRequest = new ConfirmationRequest();
-            confirmationRequest.requester = requester;
             confirmationRequest.checkboxLabel = "";
         }
 
@@ -79,6 +77,11 @@ public class ConfirmationRequest {
 
         public Builder withHeaderIcon(@DrawableRes int headerIconRes) {
             confirmationRequest.headerIconRes = headerIconRes;
+            return this;
+        }
+
+        public Builder withBackgroundImage(@DrawableRes int backgroundImage) {
+            confirmationRequest.backgroundImage = backgroundImage;
             return this;
         }
 

@@ -16,19 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.waz.zclient.newreg.fragments;
- 
+
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import com.waz.api.NetworkMode;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
 import com.waz.zclient.core.stores.network.NetworkAction;
 import com.waz.zclient.controllers.tracking.screens.RegistrationScreen;
 import com.waz.zclient.core.controllers.tracking.events.registration.ViewTOS;
 import com.waz.zclient.core.stores.appentry.AppEntryState;
 import com.waz.zclient.pages.BaseFragment;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.utils.TextViewUtils;
 import com.waz.zclient.ui.views.ZetaButton;
 import com.waz.zclient.utils.ViewUtils;
@@ -63,8 +66,8 @@ public class WelcomeEmailFragment extends BaseFragment<WelcomeEmailFragment.Cont
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        getControllerFactory().getTrackingController().loadFromSavedInstance(savedInstanceState);
-        getControllerFactory().getTrackingController().onRegistrationScreen(RegistrationScreen.WELCOME);
+        ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).loadFromSavedInstance(savedInstanceState);
+        ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).onRegistrationScreen(RegistrationScreen.WELCOME);
     }
 
     @Override
@@ -76,13 +79,18 @@ public class WelcomeEmailFragment extends BaseFragment<WelcomeEmailFragment.Cont
             @Override
             public void run() {
                 WelcomeEmailFragment.this.getContainer().onOpenUrlInApp(getString(R.string.url_terms_of_service), true);
-                getControllerFactory().getTrackingController().tagEvent(new ViewTOS(ViewTOS.Source.FROM_JOIN_PAGE));
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new ViewTOS(ViewTOS.Source.FROM_JOIN_PAGE));
             }
         });
         createAccountZetaButton.setIsFilled(true);
         createAccountZetaButton.setAccentColor(color);
         signInZetaButton.setIsFilled(false);
-        signInZetaButton.setAccentColor(getResources().getColor(R.color.text__secondary_dark__40), true);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            //noinspection deprecation
+            signInZetaButton.setAccentColor(getResources().getColor(R.color.text__secondary_dark__40), true);
+        } else {
+            signInZetaButton.setAccentColor(getResources().getColor(R.color.text__secondary_dark__40, getContext().getTheme()), true);
+        }
 
         signInZetaButton.setOnClickListener(this);
         createAccountZetaButton.setOnClickListener(this);
@@ -92,7 +100,7 @@ public class WelcomeEmailFragment extends BaseFragment<WelcomeEmailFragment.Cont
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        getControllerFactory().getTrackingController().saveToSavedInstance(outState);
+        ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).saveToSavedInstance(outState);
         super.onSaveInstanceState(outState);
     }
 

@@ -17,6 +17,7 @@
  */
 package com.waz.zclient.newreg.fragments;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -28,6 +29,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.TextView;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.navigation.Page;
 import com.waz.zclient.controllers.tracking.events.profile.ResetPassword;
@@ -40,6 +42,7 @@ import com.waz.zclient.pages.BaseFragment;
 import com.waz.zclient.pages.main.profile.validator.EmailValidator;
 import com.waz.zclient.pages.main.profile.validator.PasswordValidator;
 import com.waz.zclient.pages.main.profile.views.GuidedEditText;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.utils.KeyboardUtils;
 import com.waz.zclient.ui.views.tab.TabIndicatorLayout;
 import com.waz.zclient.utils.LayoutSpec;
@@ -58,7 +61,7 @@ public class EmailSignInFragment extends BaseFragment<EmailSignInFragment.Contai
     //  LifeCycle
     //
     //////////////////////////////////////////////////////////////////////////////////////////
-    
+
     private GuidedEditText guidedEditTextEmail;
     private GuidedEditText guidedEditTextPassword;
     private TextView textViewGoToPhoneSignIn;
@@ -132,7 +135,7 @@ public class EmailSignInFragment extends BaseFragment<EmailSignInFragment.Contai
             @Override
             public void onClick(View v) {
                 getContainer().onOpenUrl(getResources().getString(R.string.url_password_reset));
-                getControllerFactory().getTrackingController().tagEvent(new ResetPassword(ResetPassword.Location.FROM_SIGN_IN));
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new ResetPassword(ResetPassword.Location.FROM_SIGN_IN));
             }
         });
 
@@ -145,7 +148,13 @@ public class EmailSignInFragment extends BaseFragment<EmailSignInFragment.Contai
         super.onViewCreated(view, savedInstanceState);
         tabIndicatorLayout.setLabels(new int[]{R.string.new_reg__phone_signup__create_account, R.string.i_have_an_account});
         tabIndicatorLayout.setSelected(TabPages.SIGN_IN);
-        tabIndicatorLayout.setTextColor(getResources().getColorStateList(R.color.wire__text_color_dark_selector));
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            //noinspection deprecation
+            tabIndicatorLayout.setTextColor(getResources().getColorStateList(R.color.wire__text_color_dark_selector));
+        } else {
+            tabIndicatorLayout.setTextColor(getResources().getColorStateList(R.color.wire__text_color_dark_selector,
+                                                                             getContext().getTheme()));
+        }
     }
 
     @Override

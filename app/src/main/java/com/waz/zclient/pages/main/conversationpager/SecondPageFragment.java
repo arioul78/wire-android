@@ -31,7 +31,6 @@ import com.waz.api.IConversation;
 import com.waz.api.SyncState;
 import com.waz.api.UpdateListener;
 import com.waz.api.User;
-import com.waz.api.Verification;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.navigation.NavigationController;
@@ -47,6 +46,7 @@ import com.waz.zclient.pages.main.connect.ConnectRequestLoadMode;
 import com.waz.zclient.pages.main.connect.PendingConnectRequestManagerFragment;
 import com.waz.zclient.pages.main.conversation.ConversationManagerFragment;
 import com.waz.zclient.ui.utils.MathUtils;
+
 import timber.log.Timber;
 
 public class SecondPageFragment extends BaseFragment<SecondPageFragment.Container> implements OnBackPressedListener,
@@ -98,8 +98,8 @@ public class SecondPageFragment extends BaseFragment<SecondPageFragment.Containe
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
+    public void onResume() {
+        super.onResume();
         getStoreFactory().getConversationStore().addConversationStoreObserverAndUpdate(this);
         getControllerFactory().getNavigationController().addPagerControllerObserver(this);
     }
@@ -111,10 +111,10 @@ public class SecondPageFragment extends BaseFragment<SecondPageFragment.Containe
     }
 
     @Override
-    public void onStop() {
+    public void onPause() {
         getControllerFactory().getNavigationController().removePagerControllerObserver(this);
         getStoreFactory().getConversationStore().removeConversationStoreObserver(this);
-        super.onStop();
+        super.onPause();
     }
 
     @Override
@@ -211,13 +211,6 @@ public class SecondPageFragment extends BaseFragment<SecondPageFragment.Containe
 
     }
 
-    @Override
-    public void onVerificationStateChanged(String conversationId,
-                                           Verification previousVerification,
-                                           Verification currentVerification) {
-
-    }
-
     private void openPage(Page page, Bundle arguments, ConversationChangeRequester conversationChangerSender) {
         if (getContainer() == null || !isResumed()) {
             return;
@@ -291,11 +284,8 @@ public class SecondPageFragment extends BaseFragment<SecondPageFragment.Containe
     @Override
     public boolean onBackPressed() {
         Fragment fragment = getChildFragmentManager().findFragmentById(R.id.fl__second_page_container);
-        if (fragment instanceof OnBackPressedListener &&
-            ((OnBackPressedListener) fragment).onBackPressed()) {
-            return true;
-        }
-        return false;
+        return fragment instanceof OnBackPressedListener &&
+            ((OnBackPressedListener) fragment).onBackPressed();
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////

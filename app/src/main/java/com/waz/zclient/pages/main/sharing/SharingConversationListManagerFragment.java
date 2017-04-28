@@ -18,7 +18,7 @@
 package com.waz.zclient.pages.main.sharing;
 
 import android.content.DialogInterface;
-import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -27,6 +27,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import com.waz.api.IConversation;
+import com.waz.utils.wrappers.URI;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
 import com.waz.zclient.controllers.navigation.Page;
@@ -64,7 +65,12 @@ public class SharingConversationListManagerFragment extends BaseFragment<Sharing
 
         loadingIndicatorView = ViewUtils.getView(view, R.id.liv__conversations__loading_indicator);
 
-        loadingIndicatorView.setColor(getResources().getColor(R.color.people_picker__loading__color));
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            //noinspection deprecation
+            loadingIndicatorView.setColor(getResources().getColor(R.color.people_picker__loading__color));
+        } else {
+            loadingIndicatorView.setColor(getResources().getColor(R.color.people_picker__loading__color, getContext().getTheme()));
+        }
         sharingIndicatorView = ViewUtils.getView(view, R.id.siv__sharing_indicator);
 
         getControllerFactory().getNavigationController().setLeftPage(Page.CONVERSATION_LIST, TAG);
@@ -147,7 +153,7 @@ public class SharingConversationListManagerFragment extends BaseFragment<Sharing
 
                 break;
             case FILE:
-                final List<Uri> sharedFileUris = getControllerFactory().getSharingController().getSharedFileUris();
+                final List<URI> sharedFileUris = getControllerFactory().getSharingController().getSharedFileUris();
                 new AlertDialog.Builder(getActivity())
                                .setMessage(getResources().getQuantityString(R.plurals.sharing__files__message, sharedFileUris.size(), sharedFileUris.size(), conversation.getName()))
                                .setPositiveButton(R.string.sharing__files__ok, new DialogInterface.OnClickListener() {

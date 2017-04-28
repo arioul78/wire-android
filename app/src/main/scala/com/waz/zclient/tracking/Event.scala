@@ -1,24 +1,25 @@
 /**
- * Wire
- * Copyright (C) 2017 Wire Swiss GmbH
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+  * Wire
+  * Copyright (C) 2017 Wire Swiss GmbH
+  *
+  * This program is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation, either version 3 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  */
 package com.waz.zclient.tracking
 
 import com.waz.api._
 import com.waz.model.ConversationData._
+import com.waz.model.Mime
 import com.waz.zclient.core.controllers.tracking.attributes.Attribute._
 import com.waz.zclient.core.controllers.tracking.attributes.RangedAttribute._
 import com.waz.zclient.core.controllers.tracking.attributes.{Attribute, RangedAttribute}
@@ -126,8 +127,8 @@ abstract class CollectionsEvent(name: String, conversationType: ConversationType
     }
   }
 }
-case class OpenedCollectionsEvent(isEmpty: Boolean, conversationType: ConversationType, withBot: Boolean) extends CollectionsEvent("collections.opened_collections", conversationType, withBot){
-  override val attributes = baseAttributes + (IS_EMPTY -> String.valueOf(isEmpty))
+case class OpenedCollectionsEvent(isEmpty: Boolean, withSearchResult: Boolean, conversationType: ConversationType, withBot: Boolean) extends CollectionsEvent("collections.opened_collections", conversationType, withBot){
+  override val attributes = baseAttributes + (IS_EMPTY -> String.valueOf(isEmpty), WITH_SEARCH_RESULT -> String.valueOf(withSearchResult))
 }
 case class OpenedItemCollectionsEvent(messageType: Message.Type, conversationType: ConversationType, withBot: Boolean) extends CollectionsEvent("collections.opened_item", conversationType, withBot){
   override val attributes = baseAttributes + (TYPE -> trackingType(messageType))
@@ -148,6 +149,12 @@ case class DidItemActionCollectionsEvent(messageAction: MessageAction, messageTy
       case _             => "other"
     })
   )
+}
+case class EnteredSearchCollectionsEvent(conversationType: ConversationType, withBot: Boolean) extends CollectionsEvent("collections.entered_search", conversationType, withBot){
+  override val attributes = baseAttributes
+}
+case class SelectedSearchResultCollectionsEvent(conversationType: ConversationType, withBot: Boolean) extends CollectionsEvent("collections.selected_search_result", conversationType, withBot){
+  override val attributes = baseAttributes
 }
 
 class CallEvent(name: String, isV3: Boolean, isGroupCall: Boolean, withOtto: Boolean) extends Event(name) {
@@ -208,4 +215,74 @@ object EndedCallEvent {
       override val rangedAttributes = Map (VOICE_CALL_DURATION -> callDuration.getSeconds.toInt)
     }
 }
+
+object AssetEvent {
+  def apply(name: String,
+            mime: Mime,
+            size: Option[Long] = None,
+            conversationType: Option[ConversationType] = None,
+            isEphemeral: Option[Boolean] = None,
+            exp: Option[EphemeralExpiration] = None,
+            uploadDuration: Option[Duration] = None): Event = {
+    new Event(name) {
+      private var map = Map.empty[Attribute, String]
+      private var rMap = Map.empty[RangedAttribute, Int]
+
+      map += (TYPE -> AssetUtils.assetMimeTypeToExtension(mime.str))
+      size.foreach { v =>
+        map += (FILE_SIZE_BYTES -> v.toString)
+        rMap += (FILE_SIZE_MB -> AssetUtils.assetSizeToMB(v))
+      }
+
+      conversationType.foreach(v => map += (CONVERSATION_TYPE -> v.toString))
+      isEphemeral.foreach { v =>
+        map += (IS_EPHEMERAL -> v.toString)
+        if (v) exp.foreach(v => map += (EPHEMERAL_EXPIRATION -> v.duration.toSeconds.toString))
+      }
+      uploadDuration.foreach(v => rMap += (FILE_UPLOAD_DURATION -> (v.toMillis / 1000).toInt))
+
+
+      override val attributes = map
+      override val rangedAttributes = rMap
+    }
+  }
+
+  def expToString(isEphemeral: Boolean, exp: EphemeralExpiration) = if (isEphemeral) exp.duration().toSeconds.toString else ""
+
+  def initiatedFileUploadEvent(mime: Mime, size: Long, convType: ConversationType, isEphemeral: Boolean, exp: EphemeralExpiration) =
+    apply("file.initiated_file_upload", mime, Some(size), Some(convType), Some(isEphemeral), Some(exp))
+
+  def initiatedFileDownloadEvent(mime: Mime, size: Long) =
+    apply("file.initiated_file_download", mime, Some(size))
+
+  def successfullyDownloadedFileEvent(mime: Mime, size: Long) =
+    apply("file.successfully_downloaded_file", mime, Some(size))
+
+  def failedFileDownloadEvent(mime: Mime) =
+    apply("file.failed_file_download", mime)
+
+  def cancelledFileUploadEvent(mime: Mime) =
+    apply("file.cancelled_file_upload", mime)
+
+  def successfullyUploadedFileEvent(mime: Mime, size: Long, uploadDuration: Duration) =
+    apply("file.successfully_uploaded_file", mime, Some(size), uploadDuration = Some(uploadDuration))
+
+}
+
+case class FailedFileUploadEvent(error: ErrorResponse) extends Event("file.failed_file_upload") {
+  override val attributes = Map(
+    EXCEPTION_TYPE    -> String.valueOf(error.getCode),
+    EXCEPTION_DETAILS -> s"${error.getLabel}, ${error.getMessage}"
+  )
+}
+
+object WebSocketConnectionEvent {
+  def apply(name: String, duration: concurrent.duration.FiniteDuration) = new Event(name) {
+    override val attributes = Map(DURATION -> duration.toMillis.toString)
+  }
+  def lostOnPingEvent(duration: concurrent.duration.FiniteDuration) = apply("notification.web_socket_lost_on_ping", duration)
+  def closedEvent(duration: concurrent.duration.FiniteDuration) = apply("notification.web_socket_closed", duration)
+}
+
+
 

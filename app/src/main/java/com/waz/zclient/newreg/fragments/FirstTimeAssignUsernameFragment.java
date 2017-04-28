@@ -19,6 +19,7 @@ package com.waz.zclient.newreg.fragments;
 
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -30,11 +31,13 @@ import android.widget.ImageView;
 import com.waz.api.AccentColor;
 import com.waz.api.ImageAsset;
 import com.waz.api.Self;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
 import com.waz.zclient.core.api.scala.ModelObserver;
 import com.waz.zclient.core.controllers.tracking.events.onboarding.OpenedUsernameFAQEvent;
 import com.waz.zclient.pages.BaseFragment;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.text.TypefaceTextView;
 import com.waz.zclient.ui.utils.BitmapUtils;
 import com.waz.zclient.ui.utils.ColorUtils;
@@ -114,7 +117,12 @@ public class FirstTimeAssignUsernameFragment extends BaseFragment<FirstTimeAssig
         suggestedUsername = getArguments().getString(ARG_SUGGESTED_USERNAME, "");
         keepButton.setIsFilled(false);
         keepButton.setAccentColor(color);
-        keepButton.setTextColor(getResources().getColor(R.color.white));
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            //noinspection deprecation
+            keepButton.setTextColor(getResources().getColor(R.color.white));
+        } else {
+            keepButton.setTextColor(getResources().getColor(R.color.white, getContext().getTheme()));
+        }
         keepButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -133,7 +141,7 @@ public class FirstTimeAssignUsernameFragment extends BaseFragment<FirstTimeAssig
         TextViewUtils.linkifyText(summaryTextView, Color.WHITE, com.waz.zclient.ui.R.string.wire__typeface__light, false, new Runnable() {
             @Override
             public void run() {
-                getControllerFactory().getTrackingController().tagEvent(new OpenedUsernameFAQEvent());
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new OpenedUsernameFAQEvent());
                 getContainer().onOpenUrl(getString(R.string.usernames__learn_more__link));
             }
         });

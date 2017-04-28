@@ -42,11 +42,8 @@ import com.waz.zclient.controllers.password.IPasswordController;
 import com.waz.zclient.controllers.permission.IRequestPermissionsController;
 import com.waz.zclient.controllers.sharing.ISharingController;
 import com.waz.zclient.controllers.singleimage.ISingleImageController;
-import com.waz.zclient.controllers.spotify.ISpotifyController;
-import com.waz.zclient.controllers.streammediaplayer.IStreamMediaPlayerController;
 import com.waz.zclient.controllers.stubs.StubThemeController;
 import com.waz.zclient.controllers.theme.IThemeController;
-import com.waz.zclient.controllers.tracking.ITrackingController;
 import com.waz.zclient.controllers.usernames.IUsernamesController;
 import com.waz.zclient.controllers.userpreferences.IUserPreferencesController;
 import com.waz.zclient.controllers.verification.IVerificationController;
@@ -180,16 +177,6 @@ public class StubControllerFactory implements IControllerFactory {
         return null;
     }
 
-    @Override
-    public ISpotifyController getSpotifyController() {
-        return null;
-    }
-
-    @Override
-    public IStreamMediaPlayerController getStreamMediaPlayerController() {
-        return null;
-    }
-
     /**
      * We need a stub implementation of the getThemeController so that test sub classes of the BaseActivity
      * don't crash any tests.
@@ -197,11 +184,6 @@ public class StubControllerFactory implements IControllerFactory {
     @Override
     public IThemeController getThemeController() {
         return new StubThemeController();
-    }
-
-    @Override
-    public ITrackingController getTrackingController() {
-        return null;
     }
 
     @Override

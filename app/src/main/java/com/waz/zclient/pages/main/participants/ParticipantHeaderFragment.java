@@ -34,7 +34,6 @@ import android.view.animation.Animation;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
-import com.waz.api.CommonConnections;
 import com.waz.api.IConversation;
 import com.waz.api.Message;
 import com.waz.api.NetworkMode;
@@ -46,7 +45,6 @@ import com.waz.zclient.R;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
 import com.waz.zclient.controllers.currentfocus.IFocusController;
 import com.waz.zclient.controllers.globallayout.KeyboardVisibilityObserver;
-import com.waz.zclient.core.controllers.tracking.attributes.RangedAttribute;
 import com.waz.zclient.core.stores.connect.ConnectStoreObserver;
 import com.waz.zclient.core.stores.connect.IConnectStore;
 import com.waz.zclient.core.stores.network.NetworkAction;
@@ -393,12 +391,8 @@ public class ParticipantHeaderFragment extends BaseFragment<ParticipantHeaderFra
             return;
         }
         if (!TextUtils.isEmpty(text.trim())) {
-            getStoreFactory().getConversationStore().getCurrentConversation().setConversationName(
-                text);
-            headerReadOnlyTextView.setText(
-                text);
-            getControllerFactory().getTrackingController().updateSessionAggregates(
-                RangedAttribute.CONVERSATION_RENAMES);
+            getStoreFactory().getConversationStore().getCurrentConversation().setConversationName(text);
+            headerReadOnlyTextView.setText(text);
         }
     }
 
@@ -531,11 +525,6 @@ public class ParticipantHeaderFragment extends BaseFragment<ParticipantHeaderFra
                 }
             }
         });
-    }
-
-    @Override
-    public void onCommonConnectionsUpdated(CommonConnections commonConnections) {
-
     }
 
     @Override

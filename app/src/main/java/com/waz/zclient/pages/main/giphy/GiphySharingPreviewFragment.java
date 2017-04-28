@@ -17,6 +17,7 @@
  */
 package com.waz.zclient.pages.main.giphy;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -34,6 +35,7 @@ import android.widget.TextView;
 import com.waz.api.GiphyResults;
 import com.waz.api.ImageAsset;
 import com.waz.api.UpdateListener;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
@@ -41,6 +43,7 @@ import com.waz.zclient.core.stores.network.NetworkStoreObserver;
 import com.waz.zclient.pages.BaseFragment;
 import com.waz.zclient.pages.main.profile.views.ConfirmationMenu;
 import com.waz.zclient.pages.main.profile.views.ConfirmationMenuListener;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.theme.ThemeUtils;
 import com.waz.zclient.ui.utils.KeyboardUtils;
 import com.waz.zclient.ui.utils.TextViewUtils;
@@ -199,7 +202,6 @@ public class GiphySharingPreviewFragment extends BaseFragment<GiphySharingPrevie
         KeyboardUtils.hideKeyboard(getActivity());
         giphyGridViewAdapter.setScrollGifCallback(this);
         getControllerFactory().getAccentColorController().addAccentColorObserver(this);
-        getStoreFactory().getInAppNotificationStore().setUserSendingPicture(true);
         getStoreFactory().getNetworkStore().addNetworkStoreObserver(this);
         giphyTitle.setText(getStoreFactory().getConversationStore().getCurrentConversation().getName());
     }
@@ -223,7 +225,6 @@ public class GiphySharingPreviewFragment extends BaseFragment<GiphySharingPrevie
 
     @Override
     public void onStop() {
-        getStoreFactory().getInAppNotificationStore().setUserSendingPicture(false);
         getControllerFactory().getAccentColorController().removeAccentColorObserver(this);
         getStoreFactory().getNetworkStore().removeNetworkStoreObserver(this);
 
@@ -240,7 +241,12 @@ public class GiphySharingPreviewFragment extends BaseFragment<GiphySharingPrevie
         confirmationMenu.setAccentColor(color);
         if (!getControllerFactory().getThemeController().isDarkTheme()) {
             confirmationMenu.setCancelColor(color, color);
-            confirmationMenu.setConfirmColor(getResources().getColor(R.color.white), color);
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                //noinspection deprecation
+                confirmationMenu.setConfirmColor(getResources().getColor(R.color.white), color);
+            } else {
+                confirmationMenu.setConfirmColor(getResources().getColor(R.color.white, getContext().getTheme()), color);
+            }
         }
         loadingIndicator.setColor(color);
     }
@@ -389,7 +395,7 @@ public class GiphySharingPreviewFragment extends BaseFragment<GiphySharingPrevie
     }
 
     private void sendGif() {
-        TrackingUtils.onSentGifMessage(getControllerFactory().getTrackingController(),
+        TrackingUtils.onSentGifMessage(((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class),
                                        getStoreFactory().getConversationStore().getCurrentConversation());
 
         if (TextUtils.isEmpty(searchTerm) || searchTerm == null) {

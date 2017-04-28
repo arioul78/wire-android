@@ -27,7 +27,7 @@ import android.graphics.Rect;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.media.ExifInterface;
-import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -46,6 +46,8 @@ import com.waz.api.ImageAsset;
 import com.waz.api.ImageAssetFactory;
 import com.waz.api.LoadHandle;
 import com.waz.api.MemoryImageCache;
+import com.waz.utils.wrappers.URI;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
@@ -55,6 +57,7 @@ import com.waz.zclient.controllers.globallayout.KeyboardVisibilityObserver;
 import com.waz.zclient.controllers.permission.RequestPermissionsObserver;
 import com.waz.zclient.pages.BaseFragment;
 import com.waz.zclient.pages.main.conversation.AssetIntentsManager;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.colorpicker.ColorPickerLayout;
 import com.waz.zclient.ui.colorpicker.EmojiBottomSheetDialog;
 import com.waz.zclient.ui.colorpicker.EmojiSize;
@@ -355,7 +358,12 @@ public class DrawingFragment extends BaseFragment<DrawingFragment.Container> imp
         } else {
             hideTip();
         }
-        drawingViewTip.setTextColor(getResources().getColor(R.color.drawing__tip__font__color_image));
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            //noinspection deprecation
+            drawingViewTip.setTextColor(getResources().getColor(R.color.drawing__tip__font__color_image));
+        } else {
+            drawingViewTip.setTextColor(getResources().getColor(R.color.drawing__tip__font__color_image, getContext().getTheme()));
+        }
         cancelLoadHandle();
         bitmapLoadHandle = backgroundImage.getSingleBitmap(ViewUtils.getOrientationDependentDisplayWidth(getActivity()), new BitmapCallback() {
             @Override
@@ -385,7 +393,6 @@ public class DrawingFragment extends BaseFragment<DrawingFragment.Container> imp
     public void onStart() {
         super.onStart();
         colorLayout.setOnWidthChangedListener(this);
-        getStoreFactory().getInAppNotificationStore().setUserSendingPicture(true);
         shakeEventListener = new ShakeEventListener();
         shakeEventListener.setOnShakeListener(new ShakeEventListener.OnShakeListener() {
             @Override
@@ -420,7 +427,6 @@ public class DrawingFragment extends BaseFragment<DrawingFragment.Container> imp
         getControllerFactory().getAccentColorController().removeAccentColorObserver(this);
         getControllerFactory().getGlobalLayoutController().removeKeyboardVisibilityObserver(this);
         getControllerFactory().getRequestPermissionsController().removeObserver(this);
-        getStoreFactory().getInAppNotificationStore().setUserSendingPicture(false);
         sensorManager.unregisterListener(shakeEventListener);
         super.onStop();
     }
@@ -443,7 +449,7 @@ public class DrawingFragment extends BaseFragment<DrawingFragment.Container> imp
     }
 
     @Override
-    public void onDataReceived(AssetIntentsManager.IntentType type, Uri uri) {
+    public void onDataReceived(AssetIntentsManager.IntentType type, URI uri) {
         switch (type) {
             case SKETCH_FROM_GALLERY:
                 drawingMethod = IDrawingController.DrawingMethod.DRAW;
@@ -534,7 +540,7 @@ public class DrawingFragment extends BaseFragment<DrawingFragment.Container> imp
                 case R.id.tv__send_button:
                     if (!drawingCanvasView.isEmpty()) {
                         getStoreFactory().getConversationStore().sendMessage(getFinalSketchImage());
-                        TrackingUtils.onSentSketchMessage(getControllerFactory().getTrackingController(),
+                        TrackingUtils.onSentSketchMessage(((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class),
                                                           getStoreFactory().getConversationStore().getCurrentConversation(),
                                                           drawingDestination);
 

@@ -18,17 +18,16 @@
 package com.waz.zclient;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Typeface;
 import android.support.annotation.Nullable;
 import com.jakewharton.threetenabp.AndroidThreeTen;
 import com.localytics.android.Localytics;
 import com.localytics.android.LocalyticsActivityLifecycleCallbacks;
 import com.waz.api.LogLevel;
-import com.waz.api.NotificationsHandler;
-import com.waz.api.TrackingEventsHandler;
 import com.waz.api.impl.AccentColors;
 import com.waz.zclient.controllers.IControllerFactory;
-import com.waz.zclient.controllers.notifications.AppTrackingEventsHandler;
+import com.waz.zclient.controllers.userpreferences.UserPreferencesController;
 import com.waz.zclient.core.stores.IStoreFactory;
 import com.waz.zclient.ui.text.TypefaceFactory;
 import com.waz.zclient.ui.text.TypefaceLoader;
@@ -40,12 +39,9 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ZApplication extends WireApplication implements NotificationsHandler.NotificationsHandlerFactory,
-                                                             ServiceContainer {
+public class ZApplication extends WireApplication implements ServiceContainer {
 
     private static final String FONT_FOLDER = "fonts";
-
-    private TrackingEventsHandler trackingEventsHandler;
 
     private TypefaceLoader typefaceloader = new TypefaceLoader() {
 
@@ -104,14 +100,7 @@ public class ZApplication extends WireApplication implements NotificationsHandle
     public void onCreate() {
         super.onCreate();
 
-        if (com.waz.zclient.BuildConfig.DEBUG) {
-            Timber.plant(new Timber.DebugTree());
-            LogLevel.setMinimumLogLevel(LogLevel.VERBOSE);
-        } else {
-            Timber.plant(new WireLoggerTree());
-            LogLevel.setMinimumLogLevel(BuildConfigUtils.getLogLevelSE(this));
-        }
-
+        setLogLevels(this);
         AndroidThreeTen.init(this);
         TypefaceFactory.getInstance().init(typefaceloader);
 
@@ -125,12 +114,17 @@ public class ZApplication extends WireApplication implements NotificationsHandle
         Localytics.setPushDisabled(false);
     }
 
-    @Override
-    public TrackingEventsHandler getTrackingEventsHandler() {
-        if (trackingEventsHandler == null) {
-            trackingEventsHandler = new AppTrackingEventsHandler(getControllerFactory().getTrackingController());
+    public static void setLogLevels(Context context) {
+        Timber.uprootAll();
+        boolean forceVerbose =  context.getSharedPreferences(UserPreferencesController.USER_PREFS_TAG, Context.MODE_PRIVATE)
+                                       .getBoolean(context.getString(R.string.pref_force_verbose_key), false);
+        if (com.waz.zclient.BuildConfig.DEBUG || forceVerbose) {
+            Timber.plant(new Timber.DebugTree());
+            LogLevel.setMinimumLogLevel(LogLevel.VERBOSE);
+        } else {
+            Timber.plant(new WireLoggerTree());
+            LogLevel.setMinimumLogLevel(BuildConfigUtils.getLogLevelSE(context));
         }
-        return trackingEventsHandler;
     }
 
     @Override

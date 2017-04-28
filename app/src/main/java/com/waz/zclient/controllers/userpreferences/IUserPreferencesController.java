@@ -18,7 +18,6 @@
 package com.waz.zclient.controllers.userpreferences;
 
 import android.support.annotation.IntDef;
-import com.waz.zclient.camera.CameraFacing;
 
 import java.util.Collection;
 import java.util.List;
@@ -41,10 +40,6 @@ public interface IUserPreferencesController {
 
     boolean showContactsDialog();
 
-    void setRecentCameraDirection(CameraFacing cameraFacing);
-
-    CameraFacing getRecentCameraDirection();
-
     void setReferralToken(String token);
 
     String getReferralToken();
@@ -57,8 +52,6 @@ public interface IUserPreferencesController {
 
     String getPersonalInvitationToken();
 
-    boolean showStatusBar();
-
     String getLastCallSessionId();
 
     void setPostSessionIdToConversation(boolean postSessionIdToConversation);
@@ -66,10 +59,6 @@ public interface IUserPreferencesController {
     boolean isPostSessionIdToConversation();
 
     String getDeviceId();
-
-    void incrementSpotifyLoginTriesCount();
-
-    int getSpotifyLoginTriesCount();
 
     boolean isCursorSendButtonEnabled();
 
@@ -86,12 +75,6 @@ public interface IUserPreferencesController {
     String getCrashException();
 
     String getCrashDetails();
-
-    String getSavedFlashState();
-
-    void setSavedFlashState(String state);
-
-    boolean isImageDownloadPolicyWifiOnly();
 
     boolean hasUserLoggedIn(String userId);
 
@@ -127,4 +110,9 @@ public interface IUserPreferencesController {
     boolean hasPlayServicesErrorShown();
 
     void setPlayServicesErrorShown(boolean value);
+
+    boolean isVariableBitRateEnabled();
+
+    boolean swapForceVerboseLogging();
+
 }

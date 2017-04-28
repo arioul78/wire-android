@@ -17,12 +17,11 @@
  */
 package com.waz.zclient.controllers.stubs;
 
-import com.waz.zclient.camera.CameraFacing;
 import com.waz.zclient.controllers.userpreferences.IUserPreferencesController;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.Collection;
 
 public class StubUserPreferencesController implements IUserPreferencesController {
   @Override
@@ -37,7 +36,7 @@ public class StubUserPreferencesController implements IUserPreferencesController
 
   @Override
   public void setVerificationCode(String code) {
-    ;
+
   }
 
   @Override
@@ -52,22 +51,12 @@ public class StubUserPreferencesController implements IUserPreferencesController
 
   @Override
   public void setPostSessionIdToConversation(boolean postSessionIdToConversation) {
-    ;
-  }
 
-  @Override
-  public CameraFacing getRecentCameraDirection() {
-    return null;
-  }
-
-  @Override
-  public boolean isImageDownloadPolicyWifiOnly() {
-    return false;
   }
 
   @Override
   public void setPersonalInvitationToken(String token) {
-    ;
+
   }
 
   @Override
@@ -77,27 +66,17 @@ public class StubUserPreferencesController implements IUserPreferencesController
 
   @Override
   public void reset() {
-    ;
-  }
 
-  @Override
-  public void incrementSpotifyLoginTriesCount() {
-    ;
   }
 
   @Override
   public void setGenericInvitationToken(String token) {
-    ;
+
   }
 
   @Override
   public String getLastCallSessionId() {
     return null;
-  }
-
-  @Override
-  public boolean showStatusBar() {
-    return false;
   }
 
   @Override
@@ -107,12 +86,12 @@ public class StubUserPreferencesController implements IUserPreferencesController
 
   @Override
   public void removeVerificationCode() {
-    ;
+
   }
 
   @Override
   public void setPerformedAction(int action) {
-    ;
+
   }
 
   @Override
@@ -146,28 +125,13 @@ public class StubUserPreferencesController implements IUserPreferencesController
   }
 
   @Override
-  public void setSavedFlashState(String state) {
-    ;
-  }
-
-  @Override
-  public void setRecentCameraDirection(CameraFacing cameraFacing) {
-    ;
-  }
-
-  @Override
-  public int getSpotifyLoginTriesCount() {
-    return 0;
-  }
-
-  @Override
   public boolean hasUserLoggedIn(String userId) {
     return false;
   }
 
   @Override
   public void setLastAccentColor(int accentColor) {
-    ;
+
   }
 
   @Override
@@ -182,17 +146,12 @@ public class StubUserPreferencesController implements IUserPreferencesController
 
   @Override
   public void tearDown() {
-    ;
-  }
 
-  @Override
-  public String getSavedFlashState() {
-    return null;
   }
 
   @Override
   public void setReferralToken(String token) {
-    ;
+
   }
 
   @Override
@@ -202,7 +161,7 @@ public class StubUserPreferencesController implements IUserPreferencesController
 
   @Override
   public void userLoggedIn(String userId) {
-    ;
+
   }
 
   @Override
@@ -227,33 +186,43 @@ public class StubUserPreferencesController implements IUserPreferencesController
 
   @Override
   public void setCrashException(String exception, String details) {
-    ;
+
   }
 
-    @Override
-    public boolean hasShareContactsEnabled() {
-        return false;
-    }
+  @Override
+  public boolean hasShareContactsEnabled() {
+    return false;
+  }
 
-    @Override
-    public void setShareContactsEnabled(boolean enabled) {
-    }
+  @Override
+  public void setShareContactsEnabled(boolean enabled) {
+  }
 
-    @Override
-    public long getLastEphemeralValue() {
-        return 0;
-    }
+  @Override
+  public long getLastEphemeralValue() {
+    return 0;
+  }
 
-    @Override
-    public void setLastEphemeralValue(long value) {
-    }
+  @Override
+  public void setLastEphemeralValue(long value) {
+  }
 
-    @Override
-    public boolean hasPlayServicesErrorShown() {
-        return false;
-    }
+  @Override
+  public boolean hasPlayServicesErrorShown() {
+    return false;
+  }
 
-    @Override
-    public void setPlayServicesErrorShown(boolean value) {
-    }
+  @Override
+  public void setPlayServicesErrorShown(boolean value) {
+  }
+
+  @Override
+  public boolean isVariableBitRateEnabled() {
+    return false;
+  }
+
+  @Override
+  public boolean swapForceVerboseLogging() {
+    return false;
+  }
 }

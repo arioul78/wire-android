@@ -20,9 +20,9 @@ import sbt._
 
 object Deps {
 
-  lazy val zmsDevVersion = "88.1345"
+  lazy val zmsDevVersion = "93.1390"
   // Release version number must be like this X.0(.Y)
-  lazy val zmsReleaseVersion = "89.0.323"
+  lazy val zmsReleaseVersion = "93.1.330"
 
   lazy val avsVersion = Option(System.getenv("AVS_VERSION")).getOrElse("2.7.19")
   lazy val avsName = Option(System.getenv("AVS_NAME")).getOrElse("avs")
@@ -69,9 +69,6 @@ object Deps {
   lazy val nineoldandroids = "com.nineoldandroids" % "library" % "2.4.0"
   lazy val rebound = "com.facebook.rebound" % "rebound" % "0.3.8"
   lazy val supportpreferences = "net.xpece.android" % "support-preference" % "0.8.1"
-
-  lazy val spotifyAuth = "com.wire" % "spotify-auth" % "1.0.0-beta13"
-  lazy val spotifyPlayer = "com.wire" % "spotify-player" % "1.0.0-beta13"
 
   lazy val audioNotifications = "com.wearezeta.avs" % "audio-notifications" % audioVersion
 

@@ -27,19 +27,20 @@ import android.support.annotation.RawRes;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceCategory;
-import android.widget.Toast;
-import com.waz.api.MediaProvider;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
+import com.waz.zclient.calling.controllers.CallPermissionsController;
 import com.waz.zclient.controllers.permission.RequestPermissionsObserver;
-import com.waz.zclient.controllers.spotify.SpotifyObserver;
-import com.waz.zclient.core.controllers.tracking.events.settings.ChangedImageDownloadPreferenceEvent;
 import com.waz.zclient.core.controllers.tracking.events.Event;
+import com.waz.zclient.core.controllers.tracking.events.settings.ChangedBitRateModeEvent;
 import com.waz.zclient.core.controllers.tracking.events.settings.ChangedContactsPermissionEvent;
+import com.waz.zclient.core.controllers.tracking.events.settings.ChangedImageDownloadPreferenceEvent;
 import com.waz.zclient.core.controllers.tracking.events.settings.ChangedSendButtonSettingEvent;
 import com.waz.zclient.core.controllers.tracking.events.settings.ChangedThemeEvent;
 import com.waz.zclient.media.SoundController;
 import com.waz.zclient.pages.BasePreferenceFragment;
 import com.waz.zclient.pages.main.profile.preferences.dialogs.WireRingtonePreferenceDialogFragment;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.utils.LayoutSpec;
 import com.waz.zclient.utils.PermissionUtils;
 import com.waz.zclient.utils.TrackingUtils;
@@ -48,14 +49,12 @@ import net.xpece.android.support.preference.SwitchPreference;
 
 
 public class OptionsPreferences extends BasePreferenceFragment<OptionsPreferences.Container> implements SharedPreferences.OnSharedPreferenceChangeListener,
-                                                                                                        SpotifyObserver,
                                                                                                         RequestPermissionsObserver {
 
     private Preference.OnPreferenceChangeListener bindPreferenceSummaryToValueListener = new PreferenceSummaryChangeListener();
     private RingtonePreference ringtonePreference;
     private RingtonePreference textTonePreference;
     private RingtonePreference pingPreference;
-    private Preference spotifyPreference;
     private SwitchPreference themePreference;
 
     public static OptionsPreferences newInstance(String rootKey, Bundle extras) {
@@ -83,26 +82,6 @@ public class OptionsPreferences extends BasePreferenceFragment<OptionsPreference
         bindPreferenceSummaryToValue(textTonePreference);
         bindPreferenceSummaryToValue(pingPreference);
 
-        spotifyPreference = findPreference(getString(R.string.pref_options_spotify_key));
-        if (getControllerFactory().getSpotifyController().isLoggedIn()) {
-            spotifyPreference.setTitle(R.string.pref_options_spotify_logout_title);
-            spotifyPreference.setSummary("");
-        } else {
-            spotifyPreference.setTitle(R.string.pref_options_spotify_title);
-            spotifyPreference.setSummary(R.string.pref_options_spotify_summary);
-        }
-        spotifyPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
-                if (getControllerFactory().getSpotifyController().isLoggedIn()) {
-                    getControllerFactory().getSpotifyController().logout();
-                } else {
-                    getControllerFactory().getSpotifyController().login(getActivity());
-                }
-                return true;
-            }
-        });
-
         themePreference = (SwitchPreference) findPreference(getString(R.string.pref_options_theme_switch_key));
         themePreference.setChecked(getControllerFactory().getThemeController().isDarkTheme());
 
@@ -117,54 +96,13 @@ public class OptionsPreferences extends BasePreferenceFragment<OptionsPreference
     @Override
     public void onStart() {
         super.onStart();
-        getControllerFactory().getSpotifyController().addSpotifyObserver(this);
         getControllerFactory().getRequestPermissionsController().addObserver(this);
     }
 
     @Override
     public void onStop() {
-        getControllerFactory().getSpotifyController().removeSpotifyObserver(this);
         getControllerFactory().getRequestPermissionsController().removeObserver(this);
         super.onStop();
-    }
-
-    @Override
-    public void onDestroyView() {
-        spotifyPreference.setOnPreferenceClickListener(null);
-        spotifyPreference = null;
-        super.onDestroyView();
-    }
-
-    @Override
-    public void onLoginSuccess() {
-        if (spotifyPreference == null) {
-            return;
-        }
-        spotifyPreference.setTitle(R.string.pref_options_spotify_logout_title);
-        spotifyPreference.setSummary("");
-        getControllerFactory().getStreamMediaPlayerController()
-                              .resetMediaPlayer(MediaProvider.SPOTIFY);
-    }
-
-    @Override
-    public void onLoginFailed() {
-        if (spotifyPreference == null) {
-            return;
-        }
-        Toast.makeText(getActivity(), getString(R.string.pref_options_spotify_login_failed), Toast.LENGTH_SHORT)
-             .show();
-    }
-
-    @Override
-    public void onLogout() {
-        if (spotifyPreference == null) {
-            return;
-        }
-        spotifyPreference.setTitle(R.string.pref_options_spotify_title);
-        spotifyPreference.setSummary(R.string.pref_options_spotify_summary);
-        getControllerFactory().getStreamMediaPlayerController()
-                              .resetMediaPlayer(MediaProvider.SPOTIFY);
-
     }
 
     private void setDefaultRingtones() {
@@ -182,7 +120,7 @@ public class OptionsPreferences extends BasePreferenceFragment<OptionsPreference
         Event event = null;
         if (key.equals(getString(R.string.pref_options_sounds_key))) {
             String stringValue = sharedPreferences.getString(key, "");
-            TrackingUtils.tagChangedSoundNotificationLevelEvent(getControllerFactory().getTrackingController(),
+            TrackingUtils.tagChangedSoundNotificationLevelEvent(((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class),
                                                                 stringValue,
                                                                 getContext());
 
@@ -209,10 +147,16 @@ public class OptionsPreferences extends BasePreferenceFragment<OptionsPreference
             getControllerFactory().getThemeController().toggleThemePending(true);
             event = new ChangedThemeEvent(getControllerFactory().getThemeController().isDarkTheme());
         } else if (key.equals(getString(R.string.pref_options_cursor_send_button_key))) {
-            boolean sendButtonIsOn = sharedPreferences.getBoolean(key, false);
+            boolean sendButtonIsOn = sharedPreferences.getBoolean(key, true);
             event = new ChangedSendButtonSettingEvent(sendButtonIsOn);
+        } else if (key.equals(getString(R.string.pref_options_vbr_key))) {
+            boolean vbrOn = sharedPreferences.getBoolean(key, false);
+            CallPermissionsController ctrl = inject(CallPermissionsController.class);
+            if (ctrl != null) {
+                ctrl.setVariableBitRateMode(vbrOn);
+            }
+            event = new ChangedBitRateModeEvent(vbrOn, true);
         }
-
         return event;
     }
 

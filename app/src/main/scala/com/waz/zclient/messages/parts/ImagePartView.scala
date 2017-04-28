@@ -28,13 +28,12 @@ import com.waz.service.messages.MessageAndLikes
 import com.waz.threading.Threading
 import com.waz.zclient.controllers.AssetsController
 import com.waz.zclient.controllers.drawing.IDrawingController.DrawingMethod
-import com.waz.zclient.controllers.drawing.IDrawingController.DrawingMethod._
 import com.waz.zclient.controllers.global.SelectionController
 import com.waz.zclient.messages.MessageView.MsgBindOptions
 import com.waz.zclient.messages.parts.assets.ImageLayoutAssetPart
 import com.waz.zclient.messages.{MessageViewPart, MsgPart}
 import com.waz.zclient.utils.RichView
-import com.waz.zclient.views.ImageAssetDrawable.State.{Failed, Loaded}
+import com.waz.zclient.views.ImageAssetDrawable.State.Failed
 import com.waz.zclient.{R, ViewHelper}
 
 class ImagePartView(context: Context, attrs: AttributeSet, style: Int) extends FrameLayout(context, attrs, style) with ImageLayoutAssetPart {
@@ -47,32 +46,14 @@ class ImagePartView(context: Context, attrs: AttributeSet, style: Int) extends F
 
   private lazy val assets = inject[AssetsController]
 
-  private val imageActions = findById[View](R.id.image_actions)
   private val imageIcon = findById[View](R.id.image_icon)
 
-  padding.on(Threading.Ui)(m => Seq(imageActions, imageIcon).foreach(_.setMargin(m)))
-
-  findById[View](R.id.button_sketch).onClick(openDrawingFragment(DRAW))
-
-  findById[View](R.id.button_emoji).onClick(openDrawingFragment(EMOJI))
-
-  findById[View](R.id.button_text).onClick(openDrawingFragment(TEXT))
-
-  findById[View](R.id.button_fullscreen).onClick(message.currentValue foreach (assets.showSingleImage(_, this)))
+  padding.on(Threading.Ui)(m => imageIcon.setMargin(m))
 
   val noWifi = imageDrawable.state.map {
     case Failed(_, Some(DownloadOnWifiOnlyException)) => true
     case _ => false
   }
-
-  (for {
-    hide <- hideContent
-    focused <- message.flatMap(m => selection.focused.map(_.contains(m.id)))
-    loaded <- imageDrawable.state.map {
-      case Loaded(_, _, _) => true
-      case _ => false
-    }
-  } yield !hide && (focused && loaded)).on(Threading.Ui)(imageActions.setVisible)
 
   (for {
     noW <- noWifi
@@ -81,6 +62,8 @@ class ImagePartView(context: Context, attrs: AttributeSet, style: Int) extends F
 
   private def openDrawingFragment(drawingMethod: DrawingMethod) =
     message.currentValue foreach (assets.openDrawingFragment(_, drawingMethod))
+
+  onClicked { _ => message.head.map(assets.showSingleImage(_, this))(Threading.Ui) }
 }
 
 class WifiWarningPartView(context: Context, attrs: AttributeSet, style: Int) extends LinearLayout(context, attrs, style) with MessageViewPart with ViewHelper {

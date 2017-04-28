@@ -169,6 +169,7 @@
     <dimen name="wire__padding__18">18dp</dimen>
     <dimen name="wire__padding__20">20dp</dimen>
     <dimen name="wire__padding__26">26dp</dimen>
+    <dimen name="wire__padding__28">28dp</dimen>
     <dimen name="wire__padding__32">32dp</dimen>
     <dimen name="wire__padding__regular">16dp</dimen>
     <dimen name="wire__padding__call">18dp</dimen>
@@ -211,8 +212,6 @@
     <dimen name="chathead__border_width">2dp</dimen>
     <dimen name="chathead__large_border_width">3dp</dimen>
 
-    <dimen name="connect_request__common_users__height">88dp</dimen>
-    <dimen name="connect_request__common_users__title__margin_bottom">14dp</dimen>
     <dimen name="connect_request__common_users__chathead__vertical_padding">8dp</dimen>
     <dimen name="connect_request__common_users__pending_connection__margin_bottom">88dp</dimen>
     <dimen name="connect_request__padding">8dp</dimen>
@@ -221,8 +220,6 @@
     <dimen name="connect_request__footer_menu__height">72dp</dimen>
     <dimen name="connect_request__footer_menu__padding_bottom">@dimen/wire__padding__big</dimen>
     <dimen name="connect_request__separator__padding_horizontal">0dp</dimen>
-    <dimen name="connect_request__common_users__chathead__width">36dp</dimen>
-    <dimen name="connect_request__common_users__chathead_name__width">60dp</dimen>
 
     <!-- Message bottom menu -->
     <dimen name="message__bottom__menu__peek_height">500dp</dimen>
@@ -244,6 +241,7 @@
     <dimen name="content__message__progress_size">40dp</dimen>
     <dimen name="content__message__progress_margin_top">8dp</dimen>
     <dimen name="content__message__progress_margin_bottom">4dp</dimen>
+    <dimen name="content__message__soundmedia_margin_bottom">8dp</dimen>
     <dimen name="content__message__unsend_indicator_background_radius">12dp</dimen>
     <dimen name="content__message__error_radius">6dp</dimen>
     <dimen name="content__message__error_glyph_size">12dp</dimen>
@@ -303,6 +301,16 @@
     <dimen name="content__footer__like_icon__height">24dp</dimen>
     <dimen name="content__footer__like_icon__width">28dp</dimen>
     <dimen name="content__footer__chathead__size">20dp</dimen>
+
+    <dimen name="content__sound_player__layout_height">80dp</dimen>
+    <dimen name="content__sound_player__image_width">80dp</dimen>
+    <dimen name="content__sound_player__button_size">16dp</dimen>
+    <dimen name="content__sound_player__play_width">32dp</dimen>
+    <dimen name="content__sound_player__play_height">32dp</dimen>
+    <dimen name="content__sound_player__error_width">32dp</dimen>
+    <dimen name="content__sound_player__error_height">32dp</dimen>
+    <dimen name="content__sound_player__icon_width">16dp</dimen>
+    <dimen name="content__sound_player__icon_height">16dp</dimen>
 
     <dimen name="conversation__header__media__button_size">60dp</dimen>
     <dimen name="conversation__header__bottom_bar__height">0.5dp</dimen>
@@ -477,6 +485,9 @@
     <dimen name="first_time__confirm_email__envelope_padding_bottom">50dp</dimen>
     <dimen name="first_time__confirm_email__text_segment_vertical_padding">20dp</dimen>
 
+    <dimen name="confirmation_menu__degradation_overlay_width">260dp</dimen>
+    <dimen name="confirmation_menu__degradation_overlay_height">260dp</dimen>
+
     <dimen name="profile__guidance__text_margin_top">0dp</dimen>
     <dimen name="profile__edit_container__margin_bottom">64dp</dimen>
     <dimen name="profile__pen_icon__margin_right">64dp</dimen>
@@ -592,16 +603,6 @@
     <dimen name="mediaplayer__logo__padding">4dp</dimen>
     <dimen name="mediaplayer__controls_border_width">1dp</dimen>
 
-    <dimen name="message_notification_chathead__avatar__width">36dp</dimen>
-    <dimen name="message_notification_chathead__avatar__height">36dp</dimen>
-    <dimen name="message_notification_chathead__avatar__margin_right">6dp</dimen>
-    <dimen name="message_notification_chathead__background__padding_right">16dp</dimen>
-    <dimen name="message_notification_chathead__background__height">36dp</dimen>
-    <dimen name="message_notification_chathead__username__font_size">@dimen/wire__text_size__small</dimen>
-    <dimen name="message_notification_chathead__label__margin_bottom">3dp</dimen>
-    <dimen name="message_notification_chathead__username__padding_top">4dp</dimen>
-    <dimen name="message_notification_chathead__label__font_size">@dimen/wire__text_size__small</dimen>
-
     <dimen name="network_indicator__font__size">10dp</dimen>
     <dimen name="network_indicator__expanded_height">30dp</dimen>
     <dimen name="network_indicator__collapse_height">2dp</dimen>
@@ -628,9 +629,6 @@
 
     <!-- Screen height of a "large" screen. Screens smaller than this will not show logo on registration page -->
     <dimen name="new_reg__title_ab_test__hide_logo__screen_height">580dp</dimen>
-
-    <dimen name="notification__chathead__margin_top">70dp</dimen>
-    <dimen name="notification__chathead__margin_left">14dp</dimen>
 
     <dimen name="onboarding_hint__discover_change_profile_picture__text_size">@dimen/wire__text_size__small</dimen>
     <dimen name="onboarding_hint__discover_change_accent_color__margin_bottom">60dp</dimen>
@@ -670,7 +668,7 @@
     <dimen name="people_picker__input__margin_right">44dp</dimen>
     <dimen name="people_picker__error_icon__padding">16dp</dimen>
     <dimen name="people_picker__error_icon_text__top_padding">8dp</dimen>
-    <dimen name="people_picker__input_person_token__padding_horizontal">8dp</dimen>
+    <dimen name="people_picker__input_person_token__padding_horizontal">10dp</dimen>
     <dimen name="people_picker__input_person_token__padding_right_fix">2dp</dimen>
     <dimen name="people_picker__input_person_token__extra_space_for_cursor">2dp</dimen>
     <dimen name="people_picker__button__clickarea__padding">8dp</dimen>
@@ -693,6 +691,7 @@
     <dimen name="contactlist__generic_invite_button__margin_vertical">14dp</dimen>
     <dimen name="contactlist__user_selection_button__bottom_margin">6dp</dimen>
     <dimen name="people_picker__border_line__height">@dimen/wire__divider__height__thin</dimen>
+    <dimen name="people_picker__expander__padding_top">8dp</dimen>
 
     <dimen name="sharing_indicator__font__size">10dp</dimen>
     <dimen name="sharing_indicator__expanded_height">30dp</dimen>
@@ -811,7 +810,7 @@
     <dimen name="toolbar_home_icon_width">56dp</dimen>
 
     <dimen name="collections__content_horizontal_padding">@dimen/wire__padding__20</dimen>
-    <dimen name="collections__content_top_padding">24dp</dimen>
+    <dimen name="collections__content_top_padding">16dp</dimen>
     <dimen name="collections__content_bottom_padding">24dp</dimen>
     <dimen name="collections__header_height">56dp</dimen>
     <dimen name="collections__image_padding">0.5dp</dimen>
@@ -820,8 +819,30 @@
     <dimen name="collections__small_item_view_height">64dp</dimen>
     <dimen name="collections__item_top_margin">2dp</dimen>
     <dimen name="collections__web_preview_image_size">40dp</dimen>
-    <dimen name="collections__multi_share_footer_height">50dp</dimen>
+    <dimen name="collections__multi_share_search_height">32dp</dimen>
+    <dimen name="collections__multi_share_footer_height">64dp</dimen>
+    <dimen name="collections__multi_share__image_preview__height">200dp</dimen>
+    <dimen name="collections__multi_share__text_preview__height">80dp</dimen>
+    <dimen name="collections__multi_share__file_preview__height">80dp</dimen>
     <dimen name="collections__item_inner_padding">16dp</dimen>
     <dimen name="collections__small_text_line_size">8dp</dimen>
     <dimen name="collections__small_text_height">12dp</dimen>
+
+    <dimen name="search__result__height">56dp</dimen>
+    <dimen name="search__chathead__size">28dp</dimen>
+    <dimen name="search__edit_text__height">48dp</dimen>
+    <dimen name="search__result__count_radius">10dp</dimen>
+    <dimen name="search__box__close_size">20dp</dimen>
+    <dimen name="search__result__counter_width">24dp</dimen>
+    <dimen name="search__result__counter_height">20dp</dimen>
+    <dimen name="search__no_results__top_margin">128dp</dimen>
+    <dimen name="search__box__padding">20dp</dimen>
+    <dimen name="search__box_drawable__padding">22dp</dimen>
+    <dimen name="search__box_close__margin">12dp</dimen>
+
+    <dimen name="share_extension__preview__card_radius">4dp</dimen>
+    <dimen name="share_extension__preview__card_elevation">10dp</dimen>
+    <dimen name="share_extension__row__checkbox_size">24dp</dimen>
+    <dimen name="share_extension__send_button__size">36dp</dimen>
+
 </resources>

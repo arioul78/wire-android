@@ -19,7 +19,6 @@ package com.waz.zclient.mock;
 
 import android.app.Activity;
 import android.view.View;
-
 import com.waz.zclient.controllers.IControllerFactory;
 import com.waz.zclient.controllers.accentcolor.IAccentColorController;
 import com.waz.zclient.controllers.background.IBackgroundController;
@@ -43,8 +42,6 @@ import com.waz.zclient.controllers.password.IPasswordController;
 import com.waz.zclient.controllers.permission.IRequestPermissionsController;
 import com.waz.zclient.controllers.sharing.ISharingController;
 import com.waz.zclient.controllers.singleimage.ISingleImageController;
-import com.waz.zclient.controllers.spotify.ISpotifyController;
-import com.waz.zclient.controllers.streammediaplayer.IStreamMediaPlayerController;
 import com.waz.zclient.controllers.stubs.StubAccentColorController;
 import com.waz.zclient.controllers.stubs.StubBackgroundController;
 import com.waz.zclient.controllers.stubs.StubCallingController;
@@ -70,16 +67,12 @@ import com.waz.zclient.controllers.stubs.StubRequestPermissionsController;
 import com.waz.zclient.controllers.stubs.StubSharingController;
 import com.waz.zclient.controllers.stubs.StubSingleImageController;
 import com.waz.zclient.controllers.stubs.StubSlidingPaneController;
-import com.waz.zclient.controllers.stubs.StubSpotifyController;
-import com.waz.zclient.controllers.stubs.StubStreamMediaPlayerController;
 import com.waz.zclient.controllers.stubs.StubThemeController;
-import com.waz.zclient.controllers.stubs.StubTrackingController;
 import com.waz.zclient.controllers.stubs.StubUserPreferencesController;
 import com.waz.zclient.controllers.stubs.StubUsernamesController;
 import com.waz.zclient.controllers.stubs.StubVerificationController;
 import com.waz.zclient.controllers.stubs.StubVibratorController;
 import com.waz.zclient.controllers.theme.IThemeController;
-import com.waz.zclient.controllers.tracking.ITrackingController;
 import com.waz.zclient.controllers.usernames.IUsernamesController;
 import com.waz.zclient.controllers.userpreferences.IUserPreferencesController;
 import com.waz.zclient.controllers.verification.IVerificationController;
@@ -135,13 +128,7 @@ public class MockControllerFactory implements IControllerFactory {
 
   protected ISingleImageController singleImageController = spy(StubSingleImageController.class);
 
-  protected ISpotifyController spotifyController = spy(StubSpotifyController.class);
-
-  protected IStreamMediaPlayerController streamMediaPlayerController = spy(StubStreamMediaPlayerController.class);
-
   protected IThemeController themeController = spy(StubThemeController.class);
-
-  protected ITrackingController trackingController = spy(StubTrackingController.class);
 
   protected IUserPreferencesController userPreferencesController = spy(StubUserPreferencesController.class);
 
@@ -187,11 +174,6 @@ public class MockControllerFactory implements IControllerFactory {
   }
 
   @Override
-  public IStreamMediaPlayerController getStreamMediaPlayerController() {
-    return streamMediaPlayerController;
-  }
-
-  @Override
   public IOnboardingController getOnboardingController() {
     return onboardingController;
   }
@@ -219,11 +201,6 @@ public class MockControllerFactory implements IControllerFactory {
   @Override
   public IAccentColorController getAccentColorController() {
     return accentColorController;
-  }
-
-  @Override
-  public ISpotifyController getSpotifyController() {
-    return spotifyController;
   }
 
   @Override
@@ -278,11 +255,6 @@ public class MockControllerFactory implements IControllerFactory {
   @Override
   public ISharingController getSharingController() {
     return sharingController;
-  }
-
-  @Override
-  public ITrackingController getTrackingController() {
-    return trackingController;
   }
 
   @Override

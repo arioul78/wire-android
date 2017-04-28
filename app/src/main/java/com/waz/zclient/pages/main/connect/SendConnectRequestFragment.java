@@ -25,12 +25,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.widget.TextView;
-import com.waz.api.CommonConnections;
 import com.waz.api.IConversation;
 import com.waz.api.User;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
-import com.waz.zclient.core.controllers.tracking.attributes.RangedAttribute;
 import com.waz.zclient.core.stores.connect.ConnectStoreObserver;
 import com.waz.zclient.core.stores.connect.IConnectStore;
 import com.waz.zclient.pages.BaseFragment;
@@ -38,13 +37,14 @@ import com.waz.zclient.pages.main.participants.ProfileAnimation;
 import com.waz.zclient.pages.main.participants.ProfileSourceAnimation;
 import com.waz.zclient.pages.main.participants.ProfileTabletAnimation;
 import com.waz.zclient.pages.main.participants.dialog.DialogLaunchMode;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.theme.ThemeUtils;
 import com.waz.zclient.ui.utils.KeyboardUtils;
 import com.waz.zclient.ui.views.UserDetailsView;
 import com.waz.zclient.ui.views.ZetaButton;
 import com.waz.zclient.utils.LayoutSpec;
-import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.utils.TrackingUtils;
+import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.views.images.ImageAssetImageView;
 import com.waz.zclient.views.menus.FooterMenu;
 import com.waz.zclient.views.menus.FooterMenuCallback;
@@ -216,9 +216,7 @@ public class SendConnectRequestFragment extends BaseFragment<SendConnectRequestF
     }
 
     private void trackSendConnectRequest(User user) {
-        getControllerFactory().getTrackingController().updateSessionAggregates(RangedAttribute.CONNECT_REQUESTS_SENT);
-
-        TrackingUtils.tagSentConnectRequestFromUserProfileEvent(getControllerFactory().getTrackingController(),
+        TrackingUtils.tagSentConnectRequestFromUserProfileEvent(((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class),
                                                                 userRequester,
                                                                 user.getCommonConnectionsCount());
     }
@@ -250,8 +248,6 @@ public class SendConnectRequestFragment extends BaseFragment<SendConnectRequestF
 
         displayNameTextView.setText(user.getName());
         userDetailsView.setUser(user);
-
-        getStoreFactory().getConnectStore().loadCommonConnections(user.getCommonConnections());
 
         connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -299,11 +295,6 @@ public class SendConnectRequestFragment extends BaseFragment<SendConnectRequestF
             footerMenu.setVisibility(View.GONE);
             connectButton.setVisibility(View.VISIBLE);
         }
-    }
-
-    @Override
-    public void onCommonConnectionsUpdated(CommonConnections commonConnections) {
-
     }
 
     @Override

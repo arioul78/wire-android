@@ -26,16 +26,18 @@ import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
 import com.waz.api.ConversationsList;
 import com.waz.api.IConversation;
 import com.waz.api.SyncState;
-import com.waz.api.Verification;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.navigation.NavigationController;
 import com.waz.zclient.controllers.navigation.NavigationControllerObserver;
 import com.waz.zclient.controllers.navigation.Page;
 import com.waz.zclient.controllers.navigation.PagerControllerObserver;
+import com.waz.zclient.conversation.CollectionController;
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester;
 import com.waz.zclient.core.stores.conversation.ConversationStoreObserver;
 import com.waz.zclient.pages.BaseFragment;
@@ -172,7 +174,6 @@ public class ConversationPagerFragment extends BaseFragment<ConversationPagerFra
                 break;
             case UPDATER:
                 break;
-            case CHAT_HEAD:
             case CONVERSATION_LIST_UNARCHIVED_CONVERSATION:
             case CONVERSATION_LIST:
                 new Handler().postDelayed(new Runnable() {
@@ -220,13 +221,6 @@ public class ConversationPagerFragment extends BaseFragment<ConversationPagerFra
 
     @Override
     public void onMenuConversationHasChanged(IConversation fromConversation) {
-
-    }
-
-    @Override
-    public void onVerificationStateChanged(String conversationId,
-                                           Verification previousVerification,
-                                           Verification currentVerification) {
 
     }
 
@@ -291,11 +285,18 @@ public class ConversationPagerFragment extends BaseFragment<ConversationPagerFra
 
     @Override
     public void onPageVisible(Page page) {
+        if (page == Page.CONVERSATION_LIST) {
+            getCollectionController().clearSearch();
+        }
         if (page == Page.CONVERSATION_LIST &&
             getControllerFactory().getNavigationController()
                                   .getPagerPosition() == NavigationController.SECOND_PAGE) {
             conversationPager.setCurrentItem(NavigationController.FIRST_PAGE);
         }
+    }
+
+    private CollectionController getCollectionController() {
+        return ((BaseActivity) getActivity()).injectJava(CollectionController.class);
     }
 
     @Override

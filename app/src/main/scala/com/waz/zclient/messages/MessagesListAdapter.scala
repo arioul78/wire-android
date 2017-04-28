@@ -116,9 +116,8 @@ class MessagesListAdapter(listDim: Signal[Dim2])(implicit inj: Injector, ec: Eve
   override def onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder =
     MessageViewHolder(MessageView(parent, viewType), adapter)
 
-  def positionForMessage(messageData: MessageData) = {
-    cursor.flatMap(a => a._1.positionForMessage(messageData))
-  }
+  def positionForMessage(messageData: MessageData) =
+    cursor.head.flatMap { _._1.positionForMessage(messageData) } (Threading.Background)
 
   lazy val notifier = new RecyclerNotifier {
     // view depends on two message entries,

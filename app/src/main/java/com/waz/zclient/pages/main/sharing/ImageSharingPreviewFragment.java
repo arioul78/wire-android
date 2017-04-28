@@ -17,7 +17,7 @@
  */
 package com.waz.zclient.pages.main.sharing;
 
-import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,15 +26,19 @@ import android.widget.FrameLayout;
 import com.waz.api.IConversation;
 import com.waz.api.ImageAsset;
 import com.waz.api.ImageAssetFactory;
+import com.waz.utils.wrappers.URI;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.drawing.DrawingController;
 import com.waz.zclient.controllers.sharing.SharedContentType;
 import com.waz.zclient.pages.BaseFragment;
 import com.waz.zclient.pages.extendedcursor.image.ImagePreviewLayout;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.utils.TrackingUtils;
 import com.waz.zclient.utils.ViewUtils;
 
 import java.util.List;
+import java.util.Locale;
 
 public class ImageSharingPreviewFragment extends BaseFragment<ImageSharingPreviewFragment.Container> implements ImagePreviewLayout.Callback  {
 
@@ -73,12 +77,19 @@ public class ImageSharingPreviewFragment extends BaseFragment<ImageSharingPrevie
 
         String title = "";
         IConversation currentConversation = getControllerFactory().getSharingController().getDestination();
-        List<Uri> sharedImageUris = getControllerFactory().getSharingController().getSharedFileUris();
-        Uri previewImageUri = sharedImageUris.get(0);
+        List<URI> sharedImageUris = getControllerFactory().getSharingController().getSharedFileUris();
+        URI previewImageUri = sharedImageUris.get(0);
         switch (sharedContentType) {
             case IMAGE:
+                Locale currentLocale;
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                    //noinspection deprecation
+                    currentLocale = getResources().getConfiguration().locale;
+                } else {
+                    currentLocale = getResources().getConfiguration().getLocales().get(0);
+                }
                 title = String.format(getString(R.string.sharing__image_preview__title__single),
-                                      currentConversation.getName().toUpperCase(getResources().getConfiguration().locale));
+                                      currentConversation.getName().toUpperCase(currentLocale));
                 break;
         }
 
@@ -126,11 +137,11 @@ public class ImageSharingPreviewFragment extends BaseFragment<ImageSharingPrevie
         }
 
         IConversation destination = getControllerFactory().getSharingController().getDestination();
-        List<Uri> sharedImageUris = getControllerFactory().getSharingController().getSharedFileUris();
+        List<URI> sharedImageUris = getControllerFactory().getSharingController().getSharedFileUris();
         switch (sharedContentType) {
             case IMAGE:
                 getStoreFactory().getConversationStore().sendMessage(destination, ImageAssetFactory.getImageAsset(sharedImageUris.get(0)));
-                TrackingUtils.onSentPhotoMessageFromSharing(getControllerFactory().getTrackingController(),
+                TrackingUtils.onSentPhotoMessageFromSharing(((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class),
                                                             destination);
                 break;
         }

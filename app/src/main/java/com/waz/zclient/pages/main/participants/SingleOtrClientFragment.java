@@ -19,6 +19,7 @@ package com.waz.zclient.pages.main.participants;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -34,6 +35,7 @@ import com.waz.api.UiSignal;
 import com.waz.api.UpdateListener;
 import com.waz.api.User;
 import com.waz.api.Verification;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
@@ -41,6 +43,7 @@ import com.waz.zclient.controllers.tracking.events.otr.UnverifiedOtherOtrClientE
 import com.waz.zclient.controllers.tracking.events.otr.VerifiedOtherOtrClientEvent;
 import com.waz.zclient.pages.BaseFragment;
 import com.waz.zclient.pages.main.profile.ZetaPreferencesActivity;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.utils.TextViewUtils;
 import com.waz.zclient.ui.views.e2ee.OtrSwitch;
 import com.waz.zclient.utils.LayoutSpec;
@@ -254,7 +257,7 @@ public class SingleOtrClientFragment extends BaseFragment<SingleOtrClientFragmen
                 resetSession();
                 break;
             case R.id.ttv__single_otr_client__fingerprint:
-                ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(getActivity().CLIPBOARD_SERVICE);
+                ClipboardManager clipboard = (ClipboardManager) getActivity().getSystemService(Context.CLIPBOARD_SERVICE);
                 ClipData clip = ClipData.newPlainText(getString(R.string.pref_dev_avs_last_call_session_id_title),
                                                       fingerprintView.getText().toString());
                 clipboard.setPrimaryClip(clip);
@@ -373,9 +376,9 @@ public class SingleOtrClientFragment extends BaseFragment<SingleOtrClientFragmen
             return;
         }
         if (verified) {
-            getControllerFactory().getTrackingController().tagEvent(new VerifiedOtherOtrClientEvent());
+            ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new VerifiedOtherOtrClientEvent());
         } else {
-            getControllerFactory().getTrackingController().tagEvent(new UnverifiedOtherOtrClientEvent());
+            ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new UnverifiedOtherOtrClientEvent());
         }
     }
 

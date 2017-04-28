@@ -86,6 +86,8 @@
     <string name="new_reg_phone_add_password_message">Please verify your details and try again.</string>
     <string name="new_reg_phone_generic_error_header">Something went wrong</string>
     <string name="new_reg_phone_generic_error_message">Please try to register again.</string>
+    <string name="new_sign_in_generic_error_header">Something went wrong</string>
+    <string name="new_sign_in_generic_error_message">Please try to login again.</string>
     <string name="profile_generic_error_header">Something went wrong</string>
     <string name="profile_generic_error_message">Please try again.</string>
     <string name="profile_phone_generic_error_header">Invalid phone number</string>
@@ -100,6 +102,8 @@
     <string name="new_reg__code_resent__call">Stand by for a call</string>
     <string name="new_reg__invalid_code__auto_verification__manual">Something went wrong.\nPlease confirm that phone number and code are correct.</string>
     <string name="new_reg__default_country">de</string> <!-- consider updating this for every new language -->
+    <string name="new_reg_phone_budget_exhausted_title">Too many requests</string>
+    <string name="new_reg_phone_budget_exhausted_message">Please try again later.</string>
 
     <string name="new_reg_phone__title__variant_1">Call, messaging, share.\nIn private or with groups.</string>
     <string name="new_reg_phone__title__variant_2">Private and secure calls,\nmessaging and sharing.</string>
@@ -125,8 +129,8 @@
     <string name="people_picker__top_users_header_title">Top people</string>
     <string name="people_picker__address_book_matches_title">Connect</string>
     <string name="people_picker__search_result_conversations_header_title">Groups</string>
-    <string name="people_picker__search_result_connections_header_title">Connections</string>
-    <string name="people_picker__search_result_others_header_title">Suggestions</string>
+    <string name="people_picker__search_result_connections_header_title">Contacts</string>
+    <string name="people_picker__search_result_others_header_title">Connect</string>
     <string name="people_picker__search_result_recommended_header_title">Recommended</string>
     <string name="people_picker__search_result_contacts_header_title">Contacts</string>
     <string name="people_picker__invite_header_title">Invite</string>
@@ -143,6 +147,7 @@
     <string name="people_picker__error_message__no_recommenended_users_found__body__shared_contacts">We couldn\'t find any of your contacts on Wire. Enter a full name or email address.</string>
     <string name="people_picker__toolbar_header__group">Add people</string>
     <string name="people_picker__toolbar_header__one_to_one">Create group</string>
+    <string name="people_picker__search_result__expander_title">Show all %1$s ↓</string>
 
     <!-- People you may know -->
     <string name="people_picker__recommended__common_connections__one">Knows %1$s</string>
@@ -160,7 +165,7 @@
     <!-- Should not use newline in the dialog message, not supported by all devices, text will be cut off -->
     <string name="people_picker__invite__share_details_dialog">Share Wire with your friends.</string>
     <string name="people_picker__invite__share_text__header">%1$s wants to connect on Wire</string>
-    <string name="people_picker__invite__share_text__body">I\'m on Wire, search for %1$s or visit get.wire.com.</string>
+    <string name="people_picker__invite__share_text__body">I\'m on Wire, search for %1$s or visit get.wire.com</string>
     <string name="people_picker__invite__message">Hi,\nThanks for the invitation. Let\'s connect.\n%1$s</string>
     <string name="people_picker__invite__sent_feedback">Invitation sent</string>
     <string name="people_picker__contact_list__user_selection_button__label">OPEN</string>
@@ -224,20 +229,20 @@
     <string name="content__file__status__uploading__minimized">UPLOADING&#8230;</string>
     <string name="content__file__status__cancelled__minimized">CANCELLED&#8230;</string>
     <string name="content__file__status__downloading__minimized">DOWNLOADING&#8230;</string>
-    <string name="content__file__status__download_failed__minimized">_DOWNLOAD FAILED_</string>
-    <string name="content__file__status__upload_failed__minimized">_UPLOAD FAILED_</string>
+    <string name="content__file__status__download_failed__minimized">DOWNLOAD FAILED</string>
+    <string name="content__file__status__upload_failed__minimized">UPLOAD FAILED</string>
     <string name="content__file__status__uploading">%1$s · UPLOADING&#8230;</string>
     <string name="content__file__status__cancelled">%1$s · CANCELLED&#8230;</string>
     <string name="content__file__status__downloading">%1$s · DOWNLOADING&#8230;</string>
-    <string name="content__file__status__download_failed">%1$s · _DOWNLOAD FAILED_</string>
-    <string name="content__file__status__upload_failed">%1$s · _UPLOAD FAILED_</string>
+    <string name="content__file__status__download_failed">%1$s · DOWNLOAD FAILED</string>
+    <string name="content__file__status__upload_failed">%1$s · UPLOAD FAILED</string>
     <!-- used when there's a non-empty file extension, e.g. "300KB · PDF" -->
     <string name="content__file__status__default__size_and_extension">%1$s · %2$s</string>
     <string name="content__file__status__uploading__size_and_extension">%1$s · %2$s · UPLOADING&#8230;</string>
     <string name="content__file__status__cancelled__size_and_extension">%1$s · %2$s · CANCELLED&#8230;</string>
     <string name="content__file__status__downloading__size_and_extension">%1$s · %2$s · DOWNLOADING&#8230;</string>
-    <string name="content__file__status__download_failed__size_and_extension">%1$s · %2$s · _DOWNLOAD FAILED_</string>
-    <string name="content__file__status__upload_failed__size_and_extension">%1$s · %2$s · _UPLOAD FAILED_</string>
+    <string name="content__file__status__download_failed__size_and_extension">%1$s · %2$s · DOWNLOAD FAILED</string>
+    <string name="content__file__status__upload_failed__size_and_extension">%1$s · %2$s · UPLOAD FAILED</string>
 
     <string name="content__file__action__open">OPEN</string>
     <string name="content__file__action__save">SAVE</string>
@@ -303,10 +308,14 @@
     <string name="calling__self_preview_unavailable">VIDEO OFF</string>
     <string name="calling__self_preview_unavailable_long">CAMERA NOT AVAILABLE</string>
 
+    <!-- Calling in group conversation -->
+    <string name="group_calling_title">Start a call</string>
+    <string name="group_calling_message" tools:ignore="PluralsCandidate">This will call %1$d people</string>
+    <string name="group_calling_confirm">Call</string>
+    <string name="group_calling_cancel">Cancel</string>
+
     <!-- Connect request -->
     <string name="connect__message">Hi %1$s,\nLet\'s connect on Wire.\n%2$s</string>
-    <string name="connect_request__common_users__label">You both know</string>
-    <string name="connect_request__common_users__connection_counter">+%1$s</string>
     <plurals name="connect_request__common_users__summary">
         <item quantity="one">%1$d person in common</item>
         <item quantity="other">%1$d people in common</item>
@@ -322,16 +331,6 @@
     <string name="content__message__connect_request__auto_connect__footer">AUTO-CONNECTED. _LEARN MORE_</string>
     <string name="content__message__connect_request__user_info">%1$s in Contacts</string>
 
-
-    <!-- In-App Notifications -->
-    <string name="in_app_notification__footer__photo">Shared a photo</string>
-    <string name="in_app_notification__footer__file">Shared a file</string>
-    <string name="in_app_notification__footer__video">Shared a video</string>
-    <string name="in_app_notification__footer__audio">Shared an audio message</string>
-    <string name="in_app_notification__footer__location">Shared a location</string>
-    <string name="in_app_notification__footer__ping">Pinged</string>
-    <string name="in_app_notification__footer__pinged_again">Pinged again</string>
-
     <!-- Otr-->
     <plurals name="conversation__degraded_confirmation__header__single_user">
         <item quantity="one">%1$s started using a new device.</item>
@@ -343,6 +342,8 @@
         <item quantity="one">Do you still want to send your message?</item>
         <item quantity="other">Do you still want to send your messages?</item>
     </plurals>
+    <string name="conversation__degraded_confirmation__accept_call">Do you want to accept the call?</string>
+    <string name="conversation__degraded_confirmation__place_call">Do you still want to place the call?</string>
     <string name="conversation__degraded_confirmation__positive_action">Send anyway</string>
     <plurals name="conversation__degraded_confirmation__negative_action">
         <item quantity="zero">Show people</item>
@@ -407,7 +408,9 @@
     <string name="mediaplayer__artist__placeholder">Track</string>
     <string name="mediaplayer__artist__error">Track is unavailable</string>
     <string name="mediaplayer__source__soundcloud" translatable="false">SoundCloud</string>
+    <string name="mediaplayer__message__onsoundcloud">on SoundCloud</string>
     <string name="mediaplayer__source__spotify" translatable="false">Spotify</string>
+    <string name="mediaplayer__message__onspotify">on Spotify</string>
     <string name="mediaplayer__spotify__hint">Connect with Spotify</string>
     <string name="mediaplayer__open_external">Open in browser</string>
 
@@ -482,7 +485,10 @@
     <string name="pref_options_screen_title">Options</string>
     <string name="pref_options_contacts_title">Share Contacts</string>
     <string name="pref_options_contacts_summary">This helps you connect with others. We anonymize all the information and do not share it with anyone else.</string>
+    <string name="pref_options_vbr_title">Variable Bit Rate Encoding</string>
+    <string name="pref_options_vbr_summary">This makes audio calls use less data and work better on slower networks. Turn off to use Constant Bitrate Encoding.</string>
     <string name="pref_options_alerts_category_title">Alerts</string>
+    <string name="pref_options_calls_category_title">Calls</string>
     <string name="pref_options_sounds_title">Sounds</string>
     <string name="pref_options_sounds_all">All</string>
     <string name="pref_options_sounds_new_conversations_and_talks_only">First message, pings, calls</string>
@@ -501,10 +507,6 @@
     <string name="pref_options_requested_category_title">By popular demand</string>
     <string name="pref_options_cursor_send_button_title">Send button</string>
     <string name="pref_options_cursor_send_button_summary">Disable to send via the keyboard.</string>
-    <string name="pref_options_spotify_title">Connect with Spotify</string>
-    <string name="pref_options_spotify_logout_title">Disconnect with Spotify</string>
-    <string name="pref_options_spotify_summary">You need a Spotify Premium account.</string>
-    <string name="pref_options_spotify_login_failed">Login failed. Please try again!</string>
 
     <!-- Devices -->
     <string name="pref_devices_screen_title">Devices</string>
@@ -559,6 +561,9 @@
     <string name="pref_about_licenses_url">@string/url_third_party_licences</string>
     <string name="pref_about_version_title">Version %s</string>
     <string name="pref_about_copyright_title">\u00A9 Wire Swiss GmbH</string>
+
+    <!-- Pref invite -->
+    <string name="pref_invite_title">Invite people</string>
 
     <!-- Preference Account Actions -->
     <string name="pref__account_action__phone_verification__title">Verify phone number</string>
@@ -686,8 +691,8 @@
     <string name="notification__message__group__renamed_conversation">renamed the conversation to %1$s</string>
     <string name="notification__message__group__add">added people to the conversation</string>
     <string name="notification__message__group__remove">removed people from the conversation</string>
-    <string name="notification__message__multiple__accept_request">accepted your connection request</string>
-    <string name="notification__message__single__accept_request">Accepted your connection request</string>
+    <string name="notification__message__generic__accept_request">You have a new connection</string>
+    <string name="notification__message__single__accept_request">You and %1$s are now connected</string>
     <string name="notification__message__group__default_conversation_name">group conversation</string>
     <string name="notification__message__group__liked">\u2764 your message</string>
 
@@ -956,7 +961,6 @@
     <string name="conversation_toolbar__delete">Delete</string>
     <string name="conversation_toolbar__copy">Copy</string>
     <string name="conversation_toolbar__fwd">Share</string>
-    <string name="conversation_toolbar__mediabar__close">Stop</string>
 
     <!-- Asset upload errors -->
     <string name="asset_upload_error__not_found__title">File not found</string>
@@ -984,6 +988,9 @@
     <string name="video_message_error__missing_camera_permissions">To send video messages, grant permission to access the camera and media files.</string>
     <string name="audio_message_error__missing_audio_permissions">To send audio messages, grant permission to record audio.</string>
     <string name="audio_message_error__generic">Unable to play audio</string>
+
+    <!-- Audio bit rate mode -->
+    <string name="audio_message__constant_bit_rate">CONSTANT BIT RATE</string>
 
     <!-- no contacts -->
     <string name="no_conversation_in_list__header">No active conversations</string>
@@ -1117,6 +1124,9 @@
 
     <string name="multi_share_toast_sending">@string/message_footer__status__sending</string>
     <string name="multi_share_toast_failed">Sending failed</string>
-    <string name="multi_share_search_hint">SEARCH BY CONVERSATION NAME</string>
+    <string name="multi_share_search_hint">SEND TO…</string>
+
+    <string name="search__box__hint_text">SEARCH TEXT MESSAGES</string>
+    <string name="search__no_results">No results.</string>
 
 </resources>

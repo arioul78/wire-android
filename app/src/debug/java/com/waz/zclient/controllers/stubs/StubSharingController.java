@@ -18,8 +18,8 @@
 package com.waz.zclient.controllers.stubs;
 
 import android.app.Activity;
-import android.net.Uri;
 import com.waz.api.IConversation;
+import com.waz.utils.wrappers.URI;
 import com.waz.zclient.controllers.sharing.ISharingController;
 import com.waz.zclient.controllers.sharing.SharedContentType;
 import com.waz.zclient.controllers.sharing.SharingObserver;
@@ -29,48 +29,48 @@ import java.util.List;
 
 public class StubSharingController implements ISharingController {
   @Override
-  public void setSharedUris(List<Uri> imageUris) {
-    ;
+  public void setSharedUris(List<URI> imageUris) {
+
   }
 
   @Override
-  public List<Uri> getSharedFileUris() {
+  public List<URI> getSharedFileUris() {
     return null;
   }
 
   @Override
-  public void onContentShared(Activity activity, IConversation toConversation, List<Uri> sharedUris) {
-    ;
+  public void onContentShared(Activity activity, IConversation toConversation, List<URI> sharedUris) {
+
   }
 
   @Override
   public void maybeResetSharedText(IConversation currentConversation) {
-    ;
+
   }
 
   @Override
   public void setDestination(IConversation conversation) {
-    ;
+
   }
 
   @Override
   public void onContentShared(Activity activity, IConversation toConversation) {
-    ;
+
   }
 
   @Override
   public void onContentShared(Activity activity, IConversation toConversation, String sharedText) {
-    ;
+
   }
 
   @Override
   public void maybeResetSharedUris(IConversation currentConversation) {
-    ;
+
   }
 
   @Override
   public void addObserver(SharingObserver observer) {
-    ;
+
   }
 
   @Override
@@ -85,7 +85,7 @@ public class StubSharingController implements ISharingController {
 
   @Override
   public void setSharingConversationId(String conversationId) {
-    ;
+
   }
 
   @Override
@@ -95,12 +95,12 @@ public class StubSharingController implements ISharingController {
 
   @Override
   public void setSharedContentType(SharedContentType type) {
-    ;
+
   }
 
   @Override
   public void tearDown() {
-    ;
+
   }
 
   @Override
@@ -110,7 +110,7 @@ public class StubSharingController implements ISharingController {
 
   @Override
   public void setSharedText(String text) {
-    ;
+
   }
 
   @Override
@@ -120,6 +120,6 @@ public class StubSharingController implements ISharingController {
 
   @Override
   public void removeObserver(SharingObserver observer) {
-    ;
+
   }
 }

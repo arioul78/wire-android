@@ -21,15 +21,16 @@ import _root_.com.waz.api.VoiceChannelState._
 import _root_.com.waz.service.ZMessaging
 import _root_.com.waz.utils.events.{EventContext, Signal}
 import android.os.PowerManager
-import com.waz.api.{IConversation, KindOfCall, VoiceChannelState}
+import com.waz.ZLog.ImplicitTag._
+import com.waz.api.{IConversation, KindOfCall, Verification, VoiceChannelState}
+import com.waz.model.ConversationData.ConversationType
 import com.waz.model.{UserId, VoiceChannelData}
 import com.waz.service.call.CallInfo
-import com.waz.service.call.CallInfo._
 import com.waz.threading.Threading
 import com.waz.zclient.calling.CallingActivity
 import com.waz.zclient.media.SoundController
-import com.waz.zclient.{Injectable, Injector, WireContext}
-import com.waz.ZLog.ImplicitTag._
+import com.waz.zclient.utils.ContextUtils._
+import com.waz.zclient.{Injectable, Injector, R, WireContext}
 
 class GlobalCallingController(implicit inj: Injector, cxt: WireContext, eventContext: EventContext) extends Injectable {
 
@@ -50,18 +51,18 @@ class GlobalCallingController(implicit inj: Injector, cxt: WireContext, eventCon
 
   val zmsOpt = inject[Signal[Option[ZMessaging]]]
 
-  val v3CallOpt: Signal[Option[CallInfo]] = zmsOpt.flatMap {
-    case Some(z) => z.calling.currentCall.map(Some(_))
+  val v3Call: Signal[Option[CallInfo]] = zmsOpt.flatMap {
+    case Some(z) => z.calling.currentCall
     case _ => Signal.const(None)
   }
 
-  val isV3Call = v3CallOpt.map {
-    case Some(IsActive()) => true
+  val isV3Call = v3Call.map {
+    case Some(_) => true
     case _ => false
   }.disableAutowiring()
 
   val convIdOpt = isV3Call.flatMap {
-    case true => v3CallOpt.map(_.flatMap(_.convId))
+    case true => v3Call.map(_.map(_.convId))
     case false => zmsOpt.flatMap {
       case Some(z) => z.voiceContent.ongoingAndTopIncomingChannel
       case _ => Signal.const((Option.empty[VoiceChannelData], Option.empty[VoiceChannelData]))
@@ -80,7 +81,7 @@ class GlobalCallingController(implicit inj: Injector, cxt: WireContext, eventCon
   }
 
   val callStateOpt: Signal[Option[VoiceChannelState]] = isV3Call.flatMap {
-    case true => v3CallOpt.map(_.map(_.state))
+    case true => v3Call.map(_.map(_.state))
     case _ => currentChannelOpt.map(_.map(_.state))
   }
 
@@ -90,6 +91,22 @@ class GlobalCallingController(implicit inj: Injector, cxt: WireContext, eventCon
       case _ => false
     }
     case _ => Signal.const(false)
+  }
+
+  val activeCallEstablished = zmsOpt.flatMap {
+    case Some(z) => callStateOpt.map {
+      case Some(SELF_CONNECTED | OTHERS_CONNECTED) => true
+      case _ => false
+    }
+    case _ => Signal.const(false)
+  }
+
+  val callEnded = zmsOpt.flatMap {
+    case Some(z) => callStateOpt.map {
+      case Some(NO_ACTIVE_USERS) => true
+      case _ => false
+    }
+    case _ => Signal.const(true)
   }
 
   val outgoingCall = callStateOpt.map {
@@ -103,7 +120,7 @@ class GlobalCallingController(implicit inj: Injector, cxt: WireContext, eventCon
   }
 
   val muted = isV3Call.flatMap {
-    case true => v3CallOpt.map {
+    case true => v3Call.map {
       case Some(c) => c.muted
       case _ => false
     }
@@ -114,7 +131,7 @@ class GlobalCallingController(implicit inj: Injector, cxt: WireContext, eventCon
   }.disableAutowiring()
 
   val videoCall = isV3Call.flatMap {
-    case true => v3CallOpt.map {
+    case true => v3Call.map {
       case Some(c) => c.isVideoCall
       case _ => false
     }
@@ -142,6 +159,14 @@ class GlobalCallingController(implicit inj: Injector, cxt: WireContext, eventCon
     CallingActivity.start(cxt)
   }(EventContext.Global)
 
+  activeCallEstablished.onChanged.filter(_ == true) { _ =>
+    soundController.playCallEstablishedSound()
+  }
+
+  callEnded.onChanged.filter(_ == true) { _ =>
+    soundController.playCallEndedSound()
+  }
+
   activeCall.onChanged.filter(_ == false).on(Threading.Ui) { _ =>
     screenManager.releaseWakeLock()
   }(EventContext.Global)
@@ -163,14 +188,6 @@ class GlobalCallingController(implicit inj: Injector, cxt: WireContext, eventCon
     soundController.setIncomingRingTonePlaying(!m && i)
   }
 
-  (for {
-    v <- videoCall
-    o <- outgoingCall
-  } yield (v, o)) { case (v, o) =>
-    soundController.setOutgoingRingTonePlaying(o, v)
-  }
-
-
   /**
     * From here on, put signals where we're not too worried if we handle empty states or not
     * (mostly stuff that wouldn't affect proper closing of a call).
@@ -186,7 +203,6 @@ class GlobalCallingController(implicit inj: Injector, cxt: WireContext, eventCon
   val v2Service = zms.map(_.voice)
 
   val v3Service = zms.map(_.calling).disableAutowiring()
-  val v3Call = v3Service.flatMap(_.currentCall)
 
   val convId = convIdOpt.collect { case Some(c) => c }
 
@@ -207,24 +223,78 @@ class GlobalCallingController(implicit inj: Injector, cxt: WireContext, eventCon
   val conversation = zms.zip(convId) flatMap { case (z, cId) => z.convsStorage.signal(cId) }
   val conversationName = conversation map (data => if (data.convType == IConversation.Type.GROUP) data.name.filter(!_.isEmpty).getOrElse(data.generatedName) else data.generatedName)
 
+  //not concerned about degraded conversations for calling v2
+  val convDegraded = (for {
+    isV3     <- isV3Call
+    degraded <- conversation.map(_.verified == Verification.UNVERIFIED)
+  } yield isV3 && degraded)
+    .orElse(Signal(false))
+    .disableAutowiring()
+
+  val degradationWarningText = convDegraded.flatMap {
+    case false => Signal("")
+    case true =>
+      (for {
+        zms <- zms
+        convId <- convId
+      } yield {
+        zms.membersStorage.activeMembers(convId).flatMap { ids =>
+          zms.usersStorage.listSignal(ids)
+        }.map(_.filter(_.verified != Verification.VERIFIED).toList)
+      }).flatten.map {
+        case u1 :: u2 :: _ =>
+          //TODO handle more than 2 users
+          getString(R.string.conversation__degraded_confirmation__header__multiple_user, u1.name, u2.name)
+        case List(u) =>
+          //TODO handle string for case where user adds multiple clients
+          getQuantityString(R.plurals.conversation__degraded_confirmation__header__single_user, 1, u.name)
+        case _ => ""
+      }
+  }
+
+  val degradationConfirmationText = convDegraded.flatMap {
+    case false => Signal("")
+    case true => outgoingCall.map {
+      case true  => R.string.conversation__degraded_confirmation__place_call
+      case false => R.string.conversation__degraded_confirmation__accept_call
+    }.map(getString)
+  }
+
+  (for {
+    v <- videoCall
+    o <- outgoingCall
+    d <- convDegraded
+  } yield (v, o & !d)) { case (v, play) =>
+    soundController.setOutgoingRingTonePlaying(play, v)
+  }
+
+  //Use Audio view to show conversation degraded screen for calling
+  val showVideoView = convDegraded.flatMap {
+    case true  => Signal(false)
+    case false => videoCall
+  }.disableAutowiring()
+
   val selfUser = zms flatMap (_.users.selfUser)
 
   val callerId = isV3Call.flatMap {
-    case true => v3Call flatMap { case info =>
-      (info.others, info.state) match {
-        case (_, SELF_CALLING) => selfUser.map(_.id)
-        case (others, OTHER_CALLING) if others.size == 1 => Signal.const(others.head)
-        case _ => Signal.empty[UserId] //TODO Dean do I need this information for other call states?
-      }
+    case true => v3Call flatMap {
+      case Some(info) =>
+        (info.others, info.state) match {
+          case (_, SELF_CALLING) => selfUser.map(_.id)
+          case (others, OTHER_CALLING) if others.size == 1 => Signal.const(others.head)
+          case _ => Signal.empty[UserId] //TODO Dean do I need this information for other call states?
+        }
+      case _ => Signal.empty[UserId]
     }
     case _ => currentChannel map (_.caller) flatMap (_.fold(Signal.empty[UserId])(Signal(_)))
   }
   val callerData = userStorage.zip(callerId).flatMap { case (storage, id) => storage.signal(id) }
 
   val groupCall = isV3Call.flatMap {
-    case true => Signal.const(false)
-    case _ => currentChannel map (_.tracking.kindOfCall == KindOfCall.GROUP)
+    case true => conversation.map(_.convType == ConversationType.Group)
+    case _ => currentChannel.map(_.tracking.kindOfCall == KindOfCall.GROUP)
   }
+
 }
 
 private class ScreenManager(implicit injector: Injector) extends Injectable {

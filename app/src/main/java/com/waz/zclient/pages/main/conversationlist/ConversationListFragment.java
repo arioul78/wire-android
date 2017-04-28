@@ -39,15 +39,14 @@ import com.waz.api.Message;
 import com.waz.api.OtrClient;
 import com.waz.api.SyncState;
 import com.waz.api.UpdateListener;
-import com.waz.api.Verification;
 import com.waz.api.VoiceChannel;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
 import com.waz.zclient.controllers.conversationlist.ConversationListObserver;
 import com.waz.zclient.controllers.conversationlist.IConversationListController;
 import com.waz.zclient.controllers.navigation.PagerControllerObserver;
-import com.waz.zclient.controllers.streammediaplayer.StreamMediaPlayerObserver;
 import com.waz.zclient.controllers.tracking.events.navigation.ClickedOnContactsHintEvent;
 import com.waz.zclient.controllers.tracking.events.navigation.OpenedArchiveEvent;
 import com.waz.zclient.controllers.tracking.events.navigation.OpenedContactsEvent;
@@ -67,6 +66,7 @@ import com.waz.zclient.pages.main.conversationlist.views.row.ConversationListRow
 import com.waz.zclient.pages.main.conversationlist.views.row.RightIndicatorView;
 import com.waz.zclient.pages.main.pickuser.controller.IPickUserController;
 import com.waz.zclient.pages.main.profile.ZetaPreferencesActivity;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.pullforaction.PullForActionContainer;
 import com.waz.zclient.ui.pullforaction.PullForActionListener;
 import com.waz.zclient.ui.pullforaction.PullForActionMode;
@@ -89,7 +89,6 @@ public class ConversationListFragment extends BaseFragment<ConversationListFragm
                                                                                                View.OnClickListener,
                                                                                                AccentColorObserver,
                                                                                                ConversationListObserver,
-                                                                                               StreamMediaPlayerObserver,
                                                                                                VoiceChannel.JoinCallback {
     public static final String TAG = ConversationListFragment.class.getName();
     private static final int LIST_VIEW_POSITION_OFFSET = 3;
@@ -287,7 +286,7 @@ public class ConversationListFragment extends BaseFragment<ConversationListFragm
                 public void onAvatarPress() {
                     getControllerFactory().getPickUserController().showPickUser(IPickUserController.Destination.CONVERSATION_LIST, null);
                     boolean hintVisible = hintContainer != null && hintContainer.getVisibility() == View.VISIBLE;
-                    getControllerFactory().getTrackingController().tagEvent(new OpenedContactsEvent(hintVisible));
+                    ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new OpenedContactsEvent(hintVisible));
                     getControllerFactory().getOnboardingController().hideConversationListHint();
                 }
 
@@ -320,7 +319,6 @@ public class ConversationListFragment extends BaseFragment<ConversationListFragm
         super.onStart();
         activeVoiceChannels = getStoreFactory().getZMessagingApiStore().getApi().getActiveVoiceChannels();
         activeVoiceChannels.addUpdateListener(callUpdateListener);
-        conversationsListAdapter.setStreamMediaPlayerController(getControllerFactory().getStreamMediaPlayerController());
         conversationsListAdapter.setConversationActionCallback(new RightIndicatorView.ConversationActionCallback() {
             @Override
             public void startCall(IConversation conversation) {
@@ -331,11 +329,9 @@ public class ConversationListFragment extends BaseFragment<ConversationListFragm
                 }
             }
         });
-        conversationsListAdapter.setNetworkStore(getStoreFactory().getNetworkStore());
         getControllerFactory().getAccentColorController().addAccentColorObserver(this);
         if (mode == Mode.NORMAL) {
             getStoreFactory().getInAppNotificationStore().addInAppNotificationObserver(this);
-            getControllerFactory().getStreamMediaPlayerController().addStreamMediaObserver(this);
             getControllerFactory().getNavigationController().addPagerControllerObserver(this);
         }
         getStoreFactory().getConversationStore().addConversationStoreObserverAndUpdate(this);
@@ -368,7 +364,6 @@ public class ConversationListFragment extends BaseFragment<ConversationListFragm
         addedDevicesModelObserver.clear();
         activeVoiceChannels.removeUpdateListener(callUpdateListener);
         getControllerFactory().getConversationListController().removeConversationListObserver(this);
-        getControllerFactory().getStreamMediaPlayerController().removeStreamMediaObserver(this);
         getStoreFactory().getConversationStore().removeConversationStoreObserver(this);
         getStoreFactory().getInAppNotificationStore().removeInAppNotificationObserver(this);
         getControllerFactory().getNavigationController().removePagerControllerObserver(this);
@@ -412,9 +407,7 @@ public class ConversationListFragment extends BaseFragment<ConversationListFragm
         swipeListView.post(new Runnable() {
             @Override
             public void run() {
-                if (getContainer() == null) {
-                    return;
-                }
+                // this method is empty intentionally
             }
         });
 
@@ -512,13 +505,6 @@ public class ConversationListFragment extends BaseFragment<ConversationListFragm
     }
 
     @Override
-    public void onVerificationStateChanged(String conversationId,
-                                           Verification previousVerification,
-                                           Verification currentVerification) {
-
-    }
-
-    @Override
     public void onReleasedTop(int offset) {
 
     }
@@ -562,7 +548,7 @@ public class ConversationListFragment extends BaseFragment<ConversationListFragm
                         getControllerFactory().isTornDown()) {
                         return;
                     }
-                    getControllerFactory().getTrackingController().tagEvent(new OpenedArchiveEvent());
+                    ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new OpenedArchiveEvent());
                 }
             }
         }, getResources().getInteger(R.integer.list__show_archived_delay));
@@ -697,52 +683,6 @@ public class ConversationListFragment extends BaseFragment<ConversationListFragm
 
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////
-    //
-    //  StreamMediaPlayer
-    //
-    //////////////////////////////////////////////////////////////////////////////////////////
-
-
-    @Override
-    public void onPlay(Message message) {
-        conversationsListAdapter.notifyDataSetChanged();
-    }
-
-    // CHECKSTYLE:OFF
-    @Override
-    public void onPause(Message message) {
-        conversationsListAdapter.notifyDataSetChanged();
-    }
-    // CHECKSTYLE:ON
-
-    // CHECKSTYLE:OFF
-    @Override
-    public void onStop(Message message) {
-        conversationsListAdapter.notifyDataSetChanged();
-    }
-    // CHECKSTYLE:ON
-
-    @Override
-    public void onPrepared(Message message) {
-        conversationsListAdapter.notifyDataSetChanged();
-    }
-
-    @Override
-    public void onError(Message message) {
-
-    }
-
-    @Override
-    public void onComplete(Message message) {
-        conversationsListAdapter.notifyDataSetChanged();
-    }
-
-    @Override
-    public void onTrackChanged(Message newMessage) {
-        conversationsListAdapter.notifyDataSetChanged();
-    }
-
     private class ConversationListViewOnScrollListener implements AbsListView.OnScrollListener {
         private boolean userHasScrolled;
 
@@ -781,12 +721,6 @@ public class ConversationListFragment extends BaseFragment<ConversationListFragm
             }
 
             getControllerFactory().getConversationListController().notifyScrollOffsetChanged(swipeListView.computeVerticalScrollOffset(), scrolledToBottom);
-
-            // Sticky profile link header
-            View firstListRow = swipeListView.getChildAt(0);
-            if (firstListRow == null) {
-                return;
-            }
         }
     }
 
@@ -865,7 +799,7 @@ public class ConversationListFragment extends BaseFragment<ConversationListFragm
             case R.id.ll__conversation_list__hint_container:
                 getControllerFactory().getPickUserController().showPickUser(IPickUserController.Destination.CONVERSATION_LIST, null);
                 getControllerFactory().getOnboardingController().hideConversationListHint();
-                getControllerFactory().getTrackingController().tagEvent(new ClickedOnContactsHintEvent());
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new ClickedOnContactsHintEvent());
                 break;
         }
     }

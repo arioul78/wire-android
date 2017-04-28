@@ -221,6 +221,7 @@
     <issue id="UnusedResources" severity="error" />
     <issue id="UnusedIds" severity="error" />
     <issue id="UnusedResources" severity="error">
+        <ignore path="src/main/res/layout/main.xml"/>
         <ignore path="src/main/res/layout/calling*"/>
         <ignore path="src/main/res/layout/message_*"/>
         <ignore path="src/main/res/layout/collection_*"/>
@@ -232,6 +233,15 @@
         <ignore path="src/main/res/layout/single_image_view_toolbar_layout.xml"/>
         <ignore path="*pin_bg.xml*"/>
         <ignore path="src/main/res/menu/toolbar_collection.xml"/>
+        <ignore path="src/main/res/layout/search_text_result_row.xml"/>
+        <ignore path="src/main/res/drawable/search_result_counter_background.xml"/>
+        <ignore path="src/main/res/drawable/rounded_rectangle_solid_white.xml"/>
+        <ignore path="src/main/res/drawable/checkbox.xml"/>
+        <ignore path="src/main/res/drawable/rounded_graphite_rectangle.xml"/>
+        <ignore path="src/main/res/layout/share_*"/>
+        <ignore path="src/main/res/layout/fragment_image.xml"/>
+        <ignore path="src/main/res/layout/view_custom*"/>
+        <ignore path="src/main/res/layout/view_toolbar*"/>
 
         <!--TODO Dean - leaving these here as design comes up with a new container-->
         <ignore path="*ic_action_soundcloud*"/>
@@ -243,8 +253,10 @@
         <ignore path="*ic_menu_save_image_gallery.png*"/>
         <ignore path="*ic_menu_share.png*"/>
         <ignore path="*ic_menu_silence_call_w.png*"/>
+        <ignore path="*degradation_overlay*"/>
     </issue>
     <issue id="UnusedIds" severity="error" >
+        <ignore path="src/main/res/layout/main.xml"/>
         <ignore path="src/main/res/layout/calling*"/>
         <ignore path="src/main/res/layout/message_*"/>
         <ignore path="src/main/res/layout-sw600dp-port/message_*"/>
@@ -255,6 +267,11 @@
         <ignore path="src/main/res/layout/row_collection*"/>
         <ignore path="src/main/res/layout/row_selectable_conversation.xml"/>
         <ignore path="src/main/res/layout/single_image_view_toolbar_layout.xml"/>
+        <ignore path="src/main/res/layout/search_text_result_row.xml"/>
+        <ignore path="src/main/res/layout/share_*"/>
+        <ignore path="src/main/res/layout/fragment_image.xml"/>
+        <ignore path="src/main/res/layout/view_custom*"/>
+        <ignore path="src/main/res/layout/view_toolbar*"/>
     </issue>
     <issue id="EnforceUTF8" severity="error" />
     <issue id="ViewHolder" severity="error" />

@@ -17,6 +17,7 @@
  */
 package com.waz.zclient.pages.main.participants;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -32,6 +33,7 @@ import com.waz.api.Message;
 import com.waz.api.OtrClient;
 import com.waz.api.User;
 import com.waz.api.UsersList;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
 import com.waz.zclient.controllers.tracking.events.group.OpenedGroupActionEvent;
@@ -45,6 +47,7 @@ import com.waz.zclient.pages.main.conversation.controller.IConversationScreenCon
 import com.waz.zclient.pages.main.participants.views.ParticipantDetailsTab;
 import com.waz.zclient.pages.main.participants.views.ParticipantOtrDeviceAdapter;
 import com.waz.zclient.pages.main.participants.views.TabbedParticipantPagerAdapter;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.views.tab.TabIndicatorLayout;
 import com.waz.zclient.utils.ViewUtils;
 import com.waz.zclient.views.menus.FooterMenuCallback;
@@ -128,9 +131,19 @@ public class TabbedParticipantBodyFragment extends BaseFragment<TabbedParticipan
         TabIndicatorLayout tabIndicatorLayout = ViewUtils.getView(view, R.id.til_single_participant_tabs);
         int color;
         if (getControllerFactory().getThemeController().isDarkTheme()) {
-            color = getResources().getColor(R.color.text__secondary_dark);
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                //noinspection deprecation
+                color = getResources().getColor(R.color.text__secondary_dark);
+            } else {
+                color = getResources().getColor(R.color.text__secondary_dark, getContext().getTheme());
+            }
         } else {
-            color = getResources().getColor(R.color.text__secondary_light);
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                //noinspection deprecation
+                color = getResources().getColor(R.color.text__secondary_light);
+            } else {
+                color = getResources().getColor(R.color.text__secondary_light, getContext().getTheme());
+            }
         }
         if (tabIndicatorLayout != null) {
             tabIndicatorLayout.setPrimaryColor(color);
@@ -355,7 +368,7 @@ public class TabbedParticipantBodyFragment extends BaseFragment<TabbedParticipan
         if (position == 0 || getControllerFactory() == null || getControllerFactory().isTornDown()) {
             return;
         }
-        getControllerFactory().getTrackingController().tagEvent(new ViewedOtherOtrClientsEvent());
+        ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new ViewedOtherOtrClientsEvent());
     }
 
     @Override
@@ -391,7 +404,7 @@ public class TabbedParticipantBodyFragment extends BaseFragment<TabbedParticipan
                 return;
             }
             if (conversation.getType() == IConversation.Type.ONE_TO_ONE) {
-                getControllerFactory().getTrackingController().tagEvent(new OpenedGroupActionEvent());
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new OpenedGroupActionEvent());
                 getControllerFactory().getConversationScreenController().addPeopleToConversation();
             } else {
                 getControllerFactory().getConversationScreenController().hideParticipants(true, false);

@@ -37,13 +37,11 @@ import com.waz.api.ImageAsset;
 import com.waz.api.NetworkMode;
 import com.waz.api.Self;
 import com.waz.api.SyncState;
-import com.waz.api.Verification;
 import com.waz.zclient.BasePreferenceActivity;
 import com.waz.zclient.MainActivity;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.accentcolor.AccentColorChangeRequester;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
-import com.waz.zclient.controllers.tracking.events.otr.VerifiedConversationEvent;
 import com.waz.zclient.core.controllers.tracking.events.settings.ChangedProfilePictureEvent;
 import com.waz.zclient.core.stores.api.ZMessagingApiStoreObserver;
 import com.waz.zclient.core.stores.conversation.ConversationChangeRequester;
@@ -62,8 +60,10 @@ import com.waz.zclient.pages.main.profile.preferences.OptionsPreferences;
 import com.waz.zclient.pages.main.profile.preferences.RootPreferences;
 import com.waz.zclient.pages.main.profile.preferences.SupportPreferences;
 import com.waz.zclient.pages.main.profile.preferences.dialogs.WireRingtonePreferenceDialogFragment;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.utils.LayoutSpec;
 import com.waz.zclient.utils.ViewUtils;
+
 import timber.log.Timber;
 
 public class ZetaPreferencesActivity extends BasePreferenceActivity implements AccountPreferences.Container,
@@ -80,19 +80,12 @@ public class ZetaPreferencesActivity extends BasePreferenceActivity implements A
                                                                                ProfileStoreObserver,
                                                                                AccentColorObserver,
                                                                                CameraFragment.Container {
-    public static final String SHOW_SPOTIFY_LOGIN = "SHOW_SPOTIFY_LOGIN";
     public static final String SHOW_OTR_DEVICES = "SHOW_OTR_DEVICES";
     public static final String SHOW_ACCOUNT = "SHOW_ACCOUNT";
     public static final String SHOW_USERNAME_EDIT = "SHOW_USERNAME_EDIT";
 
     public static Intent getDefaultIntent(Context context) {
         return new Intent(context, ZetaPreferencesActivity.class);
-    }
-
-    public static Intent getSpotifyLoginIntent(Context context) {
-        Intent intent = getDefaultIntent(context);
-        intent.putExtra(SHOW_SPOTIFY_LOGIN, true);
-        return intent;
     }
 
     public static Intent getOtrDevicesPreferencesIntent(Context context) {
@@ -125,7 +118,6 @@ public class ZetaPreferencesActivity extends BasePreferenceActivity implements A
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        getControllerFactory().getSpotifyController().handleActivityResult(requestCode, resultCode, data);
         Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fl__root__camera);
         if (fragment != null) {
             fragment.onActivityResult(requestCode, resultCode, data);
@@ -210,18 +202,6 @@ public class ZetaPreferencesActivity extends BasePreferenceActivity implements A
     }
 
     @Override
-    public void onVerificationStateChanged(String conversationId,
-                                           Verification previousVerification,
-                                           Verification currentVerification) {
-        if (getControllerFactory() == null || getControllerFactory().isTornDown()) {
-            return;
-        }
-        if (previousVerification != Verification.VERIFIED && currentVerification == Verification.VERIFIED) {
-            getControllerFactory().getTrackingController().tagEvent(new VerifiedConversationEvent());
-        }
-    }
-
-    @Override
     public boolean onPreferenceDisplayDialog(PreferenceFragmentCompat preferenceFragmentCompat, Preference preference) {
         final String key = preference.getKey();
         final DialogFragment f;
@@ -300,7 +280,6 @@ public class ZetaPreferencesActivity extends BasePreferenceActivity implements A
     }
 
     private void resetIntentExtras(PreferenceScreen preferenceScreen) {
-        preferenceScreen.getExtras().remove(ZetaPreferencesActivity.SHOW_SPOTIFY_LOGIN);
         preferenceScreen.getExtras().remove(ZetaPreferencesActivity.SHOW_OTR_DEVICES);
         preferenceScreen.getExtras().remove(ZetaPreferencesActivity.SHOW_ACCOUNT);
         preferenceScreen.getExtras().remove(ZetaPreferencesActivity.SHOW_USERNAME_EDIT);
@@ -316,7 +295,7 @@ public class ZetaPreferencesActivity extends BasePreferenceActivity implements A
             public void execute(NetworkMode networkMode) {
                 getStoreFactory().getProfileStore().setUserPicture(imageAsset);
                 getControllerFactory().getBackgroundController().setImageAsset(imageAsset);
-                getControllerFactory().getTrackingController().tagEvent(new ChangedProfilePictureEvent());
+                injectJava(GlobalTrackingController.class).tagEvent(new ChangedProfilePictureEvent());
             }
 
             @Override

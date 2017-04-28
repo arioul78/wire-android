@@ -18,6 +18,7 @@
 package com.waz.zclient.pages.main.conversationlist;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -31,15 +32,13 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 import com.waz.api.ConversationsList;
 import com.waz.api.CredentialsUpdateListener;
-import com.waz.api.ErrorType;
-import com.waz.api.ErrorsList;
 import com.waz.api.IConversation;
 import com.waz.api.ImageAsset;
 import com.waz.api.Message;
 import com.waz.api.OtrClient;
 import com.waz.api.SyncState;
 import com.waz.api.User;
-import com.waz.api.Verification;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.LaunchActivity;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
@@ -61,7 +60,6 @@ import com.waz.zclient.controllers.tracking.events.group.CreatedGroupConversatio
 import com.waz.zclient.controllers.tracking.events.group.LeaveGroupConversationEvent;
 import com.waz.zclient.controllers.usernames.UsernamesControllerObserver;
 import com.waz.zclient.core.controllers.tracking.attributes.ConversationType;
-import com.waz.zclient.core.controllers.tracking.attributes.RangedAttribute;
 import com.waz.zclient.core.controllers.tracking.events.onboarding.KeptGeneratedUsernameEvent;
 import com.waz.zclient.core.controllers.tracking.events.onboarding.OpenedUsernameSettingsEvent;
 import com.waz.zclient.core.controllers.tracking.events.onboarding.SeenUsernameTakeOverScreenEvent;
@@ -70,8 +68,6 @@ import com.waz.zclient.core.stores.conversation.ConversationChangeRequester;
 import com.waz.zclient.core.stores.conversation.ConversationStoreObserver;
 import com.waz.zclient.core.stores.conversation.InboxLoadRequester;
 import com.waz.zclient.core.stores.conversation.OnInboxLoadedListener;
-import com.waz.zclient.core.stores.inappnotification.InAppNotificationStoreObserver;
-import com.waz.zclient.core.stores.inappnotification.KnockingEvent;
 import com.waz.zclient.media.SoundController;
 import com.waz.zclient.newreg.fragments.FirstTimeAssignUsernameFragment;
 import com.waz.zclient.pages.BaseFragment;
@@ -90,6 +86,7 @@ import com.waz.zclient.pages.main.pickuser.controller.PickUserControllerScreenOb
 import com.waz.zclient.pages.main.profile.ZetaPreferencesActivity;
 import com.waz.zclient.pages.main.profile.camera.CameraContext;
 import com.waz.zclient.pages.main.profile.camera.CameraFragment;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.animation.interpolators.penner.Expo;
 import com.waz.zclient.ui.animation.interpolators.penner.Quart;
 import com.waz.zclient.ui.optionsmenu.OptionsMenu;
@@ -121,7 +118,6 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
                                                                                                    UsernamesControllerObserver,
                                                                                                    ConfirmationObserver,
                                                                                                    AccentColorObserver,
-                                                                                                   InAppNotificationStoreObserver,
                                                                                                    FirstTimeAssignUsernameFragment.Container {
     public static final String TAG = ConversationListManagerFragment.class.getName();
 
@@ -157,7 +153,12 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
         startuiLoadingIndicatorView = ViewUtils.getView(view, R.id.liv__conversations__loading_indicator);
         listLoadingIndicatorView = ViewUtils.getView(view, R.id.lbv__conversation_list__loading_indicator);
 
-        startuiLoadingIndicatorView.setColor(getResources().getColor(R.color.people_picker__loading__color));
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            //noinspection deprecation
+            startuiLoadingIndicatorView.setColor(getResources().getColor(R.color.people_picker__loading__color));
+        } else {
+            startuiLoadingIndicatorView.setColor(getResources().getColor(R.color.people_picker__loading__color, getContext().getTheme()));
+        }
         listLoadingIndicatorView.setColor(getControllerFactory().getAccentColorController().getColor());
 
         confirmationMenu = ViewUtils.getView(view, R.id.cm__confirm_action_light);
@@ -197,7 +198,6 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
     @Override
     public void onStart() {
         super.onStart();
-        getStoreFactory().getInAppNotificationStore().addInAppNotificationObserver(this);
         getControllerFactory().getCameraController().addCameraActionObserver(this);
         getControllerFactory().getAccentColorController().addAccentColorObserver(this);
         getControllerFactory().getPickUserController().addPickUserScreenControllerObserver(this);
@@ -234,7 +234,6 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
 
     @Override
     public void onStop() {
-        getStoreFactory().getInAppNotificationStore().removeInAppNotificationObserver(this);
         getControllerFactory().getCameraController().removeCameraActionObserver(this);
         getStoreFactory().getConversationStore().removeConversationStoreObserver(this);
         getControllerFactory().getPickUserController().removePickUserScreenControllerObserver(this);
@@ -316,7 +315,6 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
         // Hide possibly open self profile
         getControllerFactory().getPickUserController().hideUserProfile();
         // Hide possibly open start ui
-        getStoreFactory().getInAppNotificationStore().setUserLookingAtPeoplePicker(false);
         if (!getControllerFactory().getPickUserController()
                                    .hidePickUser(getCurrentPickerDestination(), false)) {
             getControllerFactory().getNavigationController().setLeftPage(Page.CONVERSATION_LIST, TAG);
@@ -348,13 +346,6 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
 
     }
 
-    @Override
-    public void onVerificationStateChanged(String conversationId,
-                                           Verification previousVerification,
-                                           Verification currentVerification) {
-
-    }
-
     private void animateOnIncomingCall() {
         int duration = getResources().getInteger(R.integer.calling_animation_duration_medium);
         int resetDelay = getResources().getInteger(R.integer.calling_animation_duration_long);
@@ -372,7 +363,6 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                getStoreFactory().getInAppNotificationStore().setUserLookingAtPeoplePicker(false);
                 getControllerFactory().getPickUserController().hidePickUserWithoutAnimations(
                     getCurrentPickerDestination());
                 if (rootView != null) {
@@ -412,7 +402,6 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
 
     @Override
     public void showIncomingPendingConnectRequest(IConversation conversation) {
-        getStoreFactory().getInAppNotificationStore().setUserLookingAtPeoplePicker(false);
         getControllerFactory().getPickUserController().hidePickUser(getCurrentPickerDestination(), false);
 
         getStoreFactory().getConversationStore().setCurrentConversation(conversation,
@@ -437,13 +426,16 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
                 getStoreFactory().getConversationStore().setCurrentConversation(conversation,
                                                                                 requester);
             }
-            getControllerFactory().getTrackingController().tagEvent(new OpenedConversationEvent(ConversationType.ONE_TO_ONE_CONVERSATION.name()));
+            ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new OpenedConversationEvent(ConversationType.ONE_TO_ONE_CONVERSATION.name(),
+                                                                                                                                OpenedConversationEvent.Context.OPEN_BUTTON,
+                                                                                                                                -1));
         } else {
             getStoreFactory().getConversationStore().createGroupConversation(users, requester);
-            getControllerFactory().getTrackingController().tagEvent(new CreatedGroupConversationEvent(false,
+            ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new CreatedGroupConversationEvent(false,
                                                                                                       (users.size() + 1)));
-            getControllerFactory().getTrackingController().updateSessionAggregates(RangedAttribute.GROUP_CONVERSATIONS_STARTED);
-            getControllerFactory().getTrackingController().tagEvent(new OpenedConversationEvent(ConversationType.GROUP_CONVERSATION.name()));
+            ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new OpenedConversationEvent(ConversationType.GROUP_CONVERSATION.name(),
+                                                                                                                                OpenedConversationEvent.Context.OPEN_BUTTON,
+                                                                                                                                -1));
         }
     }
 
@@ -477,16 +469,11 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
         }
 
         if (getControllerFactory().getPickUserController().isShowingPickUser(getCurrentPickerDestination())) {
-            getStoreFactory().getInAppNotificationStore().setUserLookingAtPeoplePicker(false);
             getControllerFactory().getPickUserController().hidePickUser(getCurrentPickerDestination(), true);
             return true;
         }
 
-        if (getChildFragmentManager().findFragmentByTag(FirstTimeAssignUsernameFragment.TAG) != null) {
-            return true;
-        }
-
-        return false;
+        return getChildFragmentManager().findFragmentByTag(FirstTimeAssignUsernameFragment.TAG) != null;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -522,8 +509,6 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
                         .replace(R.id.fl__conversation_list_main, pickUserFragment, PickUserFragment.TAG)
                         .addToBackStack(PickUserFragment.TAG)
                         .commit();
-
-                    getControllerFactory().getTrackingController().updateSessionAggregates(RangedAttribute.OPENED_SEARCH);
                 }
                 break;
             case PICK_USER:
@@ -738,10 +723,8 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
             // TODO: START is set as left page on tablet, fix
             case START:
             case CONVERSATION_LIST:
-                getStoreFactory().getInAppNotificationStore().setUserLookingAtPeoplePicker(false);
                 break;
             case PICK_USER:
-                getStoreFactory().getInAppNotificationStore().setUserLookingAtPeoplePicker(true);
                 getControllerFactory().getPickUserController().showPickUser(IPickUserController.Destination.CONVERSATION_LIST, null);
                 break;
             case BLOCK_USER:
@@ -856,11 +839,11 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
         switch (item) {
             case ARCHIVE:
                 getStoreFactory().getConversationStore().archive(conversation, true);
-                getControllerFactory().getTrackingController().tagEvent(new ArchivedConversationEvent(conversation.getType().toString()));
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new ArchivedConversationEvent(conversation.getType().toString()));
                 break;
             case UNARCHIVE:
                 getStoreFactory().getConversationStore().archive(conversation, false);
-                getControllerFactory().getTrackingController().tagEvent(new UnarchivedConversationEvent(conversation.getType().toString()));
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new UnarchivedConversationEvent(conversation.getType().toString()));
                 break;
             case SILENCE:
                 conversation.setMuted(true);
@@ -1012,7 +995,7 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
                     getControllerFactory().isTornDown()) {
                     return;
                 }
-                getControllerFactory().getTrackingController().tagEvent(new LeaveGroupConversationEvent(true,
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new LeaveGroupConversationEvent(true,
                                                                                                         getStoreFactory().getConversationStore().getCurrentConversation().getUsers().size()));
 
                 getStoreFactory().getConversationStore().leave(conversation);
@@ -1026,7 +1009,7 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
                     getControllerFactory().isTornDown()) {
                     return;
                 }
-                getControllerFactory().getTrackingController().tagEvent(new LeaveGroupConversationEvent(false,
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new LeaveGroupConversationEvent(false,
                                                                                                         getStoreFactory().getConversationStore().getCurrentConversation().getUsers().size()));
             }
 
@@ -1041,7 +1024,7 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
         String cancel = getString(R.string.confirmation_menu__cancel);
 
 
-        ConfirmationRequest request = new ConfirmationRequest.Builder(IConfirmationController.LEAVE_CONVERSATION)
+        ConfirmationRequest request = new ConfirmationRequest.Builder()
             .withHeader(header)
             .withMessage(text)
             .withPositiveButton(confirm)
@@ -1091,7 +1074,7 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
                 }
 
                 if (!confirmed) {
-                    getControllerFactory().getTrackingController().tagEvent(new DeleteConversationEvent(ConversationType.getValue(conversation),
+                    ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new DeleteConversationEvent(ConversationType.getValue(conversation),
                                                                                                         DeleteConversationEvent.Context.LIST,
                                                                                                         DeleteConversationEvent.Response.CANCEL));
                     return;
@@ -1100,7 +1083,7 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
 
                 boolean deleteCurrentConversation = conversation.getId().equals(getStoreFactory().getConversationStore().getCurrentConversation().getId());
                 getStoreFactory().getConversationStore().deleteConversation(conversation, checkboxIsSelected);
-                getControllerFactory().getTrackingController().tagEvent(new DeleteConversationEvent(ConversationType.getValue(
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new DeleteConversationEvent(ConversationType.getValue(
                     conversation),
                                                                                                     DeleteConversationEvent.Context.LIST,
                                                                                                     DeleteConversationEvent.Response.DELETE));
@@ -1119,7 +1102,7 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
             checkboxLabel = getString(R.string.confirmation_menu__delete_conversation__checkbox__label);
         }
 
-        ConfirmationRequest request = new ConfirmationRequest.Builder(IConfirmationController.DELETE_CONVERSATION)
+        ConfirmationRequest request = new ConfirmationRequest.Builder()
             .withHeader(header)
             .withMessage(text)
             .withPositiveButton(confirm)
@@ -1154,7 +1137,7 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
                 if (blockingCurrentConversation) {
                     getStoreFactory().getConversationStore().setCurrentConversationToNext(ConversationChangeRequester.BLOCK_USER);
                 }
-                getControllerFactory().getTrackingController().tagEvent(new BlockingEvent(BlockingEvent.ConformationResponse.BLOCK));
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new BlockingEvent(BlockingEvent.ConformationResponse.BLOCK));
             }
 
             @Override
@@ -1163,7 +1146,7 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
                     getControllerFactory().isTornDown()) {
                     return;
                 }
-                getControllerFactory().getTrackingController().tagEvent(new BlockingEvent(BlockingEvent.ConformationResponse.CANCEL));
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new BlockingEvent(BlockingEvent.ConformationResponse.CANCEL));
             }
 
             @Override
@@ -1176,7 +1159,7 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
         String confirm = getString(R.string.confirmation_menu__confirm_block);
         String cancel = getString(R.string.confirmation_menu__cancel);
 
-        ConfirmationRequest request = new ConfirmationRequest.Builder(IConfirmationController.BLOCK_CONNECTED)
+        ConfirmationRequest request = new ConfirmationRequest.Builder()
             .withHeader(header)
             .withMessage(text)
             .withPositiveButton(confirm)
@@ -1200,30 +1183,6 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
 
     }
 
-    @Override
-    public void onIncomingMessage(Message message) {
-
-    }
-
-    @Override
-    public void onIncomingKnock(KnockingEvent knock) {
-
-    }
-
-    @Override
-    public void onSyncError(ErrorsList.ErrorDescription errorDescription) {
-        if (errorDescription.getType() != ErrorType.CANNOT_SEND_MESSAGE_TO_UNVERIFIED_CONVERSATION) {
-            return;
-        }
-
-        if (getControllerFactory().getNavigationController().getCurrentPage() == Page.MESSAGE_STREAM) {
-            return;
-        }
-
-        Toast.makeText(getActivity(), "New to unverified - will dismiss!", Toast.LENGTH_SHORT).show();
-        errorDescription.dismiss();
-    }
-
     public void hideFirstAssignUsernameScreen() {
         if (getChildFragmentManager().findFragmentByTag(FirstTimeAssignUsernameFragment.TAG) != null) {
             getChildFragmentManager().popBackStackImmediate(FirstTimeAssignUsernameFragment.TAG,
@@ -1241,7 +1200,7 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
     public void onChooseUsernameChosen() {
         getControllerFactory().getUsernameController().closeFirstAssignUsernameScreen();
         hideFirstAssignUsernameScreen();
-        getControllerFactory().getTrackingController().tagEvent(new OpenedUsernameSettingsEvent());
+        ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new OpenedUsernameSettingsEvent());
         startActivity(ZetaPreferencesActivity.getUsernameEditPreferencesIntent(getActivity()));
     }
 
@@ -1252,14 +1211,14 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
         getStoreFactory().getZMessagingApiStore().getApi().getSelf().setUsername(username, new CredentialsUpdateListener() {
             @Override
             public void onUpdated() {
-                getControllerFactory().getTrackingController().tagEvent(new KeptGeneratedUsernameEvent(true));
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new KeptGeneratedUsernameEvent(true));
             }
             @Override
             public void onUpdateFailed(int code, String message, String label) {
                 Toast.makeText(getActivity(), getString(R.string.username__set__toast_error), Toast.LENGTH_SHORT).show();
                 getControllerFactory().getUsernameController().logout();
                 getControllerFactory().getUsernameController().setUser(getStoreFactory().getZMessagingApiStore().getApi().getSelf());
-                getControllerFactory().getTrackingController().tagEvent(new KeptGeneratedUsernameEvent(false));
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new KeptGeneratedUsernameEvent(false));
             }
         });
     }
@@ -1296,7 +1255,7 @@ public class ConversationListManagerFragment extends BaseFragment<ConversationLi
             .addToBackStack(FirstTimeAssignUsernameFragment.TAG)
             .commitAllowingStateLoss();
 
-        getControllerFactory().getTrackingController().tagEvent(new SeenUsernameTakeOverScreenEvent());
+        ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new SeenUsernameTakeOverScreenEvent());
     }
 
     public interface Container {

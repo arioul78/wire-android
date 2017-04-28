@@ -23,6 +23,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
@@ -37,6 +38,7 @@ import android.widget.LinearLayout;
 import com.waz.api.BitmapCallback;
 import com.waz.api.ImageAsset;
 import com.waz.api.LoadHandle;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.OnBackPressedListener;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.accentcolor.AccentColorObserver;
@@ -48,6 +50,7 @@ import com.waz.zclient.pages.BaseFragment;
 import com.waz.zclient.pages.main.conversation.AssetIntentsManager;
 import com.waz.zclient.pages.main.profile.camera.CameraContext;
 import com.waz.zclient.pages.main.profile.camera.CameraFragment;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.utils.BitmapUtils;
 import com.waz.zclient.ui.utils.ColorUtils;
 import com.waz.zclient.ui.utils.KeyboardUtils;
@@ -268,7 +271,12 @@ public class SignUpPhotoFragment extends BaseFragment<SignUpPhotoFragment.Contai
     public void onAccentColorHasChanged(Object sender, int color) {
         chooseOwnButton.setAccentColor(color);
         keepButton.setAccentColor(color);
-        keepButton.setTextColor(getResources().getColor(R.color.text__primary_dark));
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            //noinspection deprecation
+            keepButton.setTextColor(getResources().getColor(R.color.text__primary_dark));
+        } else {
+            keepButton.setTextColor(getResources().getColor(R.color.text__primary_dark, getContext().getTheme()));
+        }
     }
 
     @Override
@@ -391,7 +399,7 @@ public class SignUpPhotoFragment extends BaseFragment<SignUpPhotoFragment.Contai
                 RegistrationEventContext registrationEventContext = registrationType == SignUpPhotoFragment.RegistrationType.Phone ?
                                                                     getStoreFactory().getAppEntryStore().getPhoneRegistrationContext() :
                                                                     getStoreFactory().getAppEntryStore().getEmailRegistrationContext();
-                getControllerFactory().getTrackingController().tagEvent(new AddedPhotoEvent(OutcomeAttribute.SUCCESS, "", photoSource, registrationEventContext));
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new AddedPhotoEvent(OutcomeAttribute.SUCCESS, "", photoSource, registrationEventContext));
 
             }
         }, getResources().getInteger(R.integer.signup__photo__selected_photo_display_delay));

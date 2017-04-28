@@ -18,6 +18,7 @@
 package com.waz.zclient.newreg.fragments;
 
 import android.Manifest;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -31,6 +32,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.TextView;
+import com.waz.zclient.BaseActivity;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.navigation.Page;
 import com.waz.zclient.core.controllers.tracking.events.registration.PrefilledPhoneNumberEvent;
@@ -43,6 +45,7 @@ import com.waz.zclient.newreg.fragments.country.CountryController;
 import com.waz.zclient.newreg.utils.AppEntryUtil;
 import com.waz.zclient.newreg.views.PhoneConfirmationButton;
 import com.waz.zclient.pages.BaseFragment;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.text.TypefaceEditText;
 import com.waz.zclient.ui.utils.KeyboardUtils;
 import com.waz.zclient.ui.utils.TextViewUtils;
@@ -148,7 +151,12 @@ public class PhoneRegisterFragment extends BaseFragment<PhoneRegisterFragment.Co
         countryController = getContainer().getCountryController();
         tabIndicatorLayout.setLabels(new int[] {R.string.new_reg__phone_signup__create_account, R.string.i_have_an_account});
         tabIndicatorLayout.setSelected(TabPages.CREATE_ACCOUNT);
-        tabIndicatorLayout.setTextColor(getResources().getColorStateList(R.color.wire__text_color_dark_selector));
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            //noinspection deprecation
+            tabIndicatorLayout.setTextColor(getResources().getColorStateList(R.color.wire__text_color_dark_selector));
+        } else {
+            tabIndicatorLayout.setTextColor(getResources().getColorStateList(R.color.wire__text_color_dark_selector, getContext().getTheme()));
+        }
     }
 
     @Override
@@ -182,7 +190,7 @@ public class PhoneRegisterFragment extends BaseFragment<PhoneRegisterFragment.Co
         final String countryCode = countryController.getCodeForAbbreviation(abbreviation);
         final String number = getControllerFactory().getDeviceUserController().getPhoneNumber(countryCode);
         if (!TextUtils.isEmpty(number)) {
-            getControllerFactory().getTrackingController().tagEvent(new PrefilledPhoneNumberEvent());
+            ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new PrefilledPhoneNumberEvent());
         }
         editTextPhone.setText(number);
     }
@@ -270,7 +278,7 @@ public class PhoneRegisterFragment extends BaseFragment<PhoneRegisterFragment.Co
                 break;
             case R.id.tv__welcome__terms_of_service:
                 getContainer().onOpenUrlInApp(getString(R.string.url_terms_of_service), true);
-                getControllerFactory().getTrackingController().tagEvent(new ViewTOS(ViewTOS.Source.FROM_JOIN_PAGE));
+                ((BaseActivity) getActivity()).injectJava(GlobalTrackingController.class).tagEvent(new ViewTOS(ViewTOS.Source.FROM_JOIN_PAGE));
                 break;
         }
     }

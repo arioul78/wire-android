@@ -28,7 +28,6 @@ import com.waz.api.Permission;
 import com.waz.api.User;
 import com.waz.zclient.R;
 import com.waz.zclient.controllers.drawing.DrawingController;
-import com.waz.zclient.controllers.tracking.ITrackingController;
 import com.waz.zclient.controllers.tracking.events.connect.SelectedTopUser;
 import com.waz.zclient.controllers.tracking.events.connect.SelectedUserFromSearchEvent;
 import com.waz.zclient.controllers.tracking.events.connect.SentConnectRequestEvent;
@@ -37,7 +36,6 @@ import com.waz.zclient.controllers.tracking.events.optionsmenu.OptionsMenuItemSe
 import com.waz.zclient.core.controllers.tracking.attributes.CompletedMediaType;
 import com.waz.zclient.core.controllers.tracking.attributes.ConversationType;
 import com.waz.zclient.core.controllers.tracking.attributes.OpenedMediaAction;
-import com.waz.zclient.core.controllers.tracking.attributes.RangedAttribute;
 import com.waz.zclient.core.controllers.tracking.events.media.CompletedMediaActionEvent;
 import com.waz.zclient.core.controllers.tracking.events.media.OpenedMediaActionEvent;
 import com.waz.zclient.core.controllers.tracking.events.media.SentAudioMessageEvent;
@@ -47,13 +45,14 @@ import com.waz.zclient.core.controllers.tracking.events.settings.ChangedSoundNot
 import com.waz.zclient.core.stores.connect.IConnectStore;
 import com.waz.zclient.pages.extendedcursor.image.ImagePreviewLayout;
 import com.waz.zclient.pages.main.pickuser.SearchResultAdapter;
+import com.waz.zclient.tracking.GlobalTrackingController;
 import com.waz.zclient.ui.optionsmenu.OptionsMenuItem;
 
 import java.util.Locale;
 
 public class TrackingUtils {
 
-    public static void tagOptionsMenuSelectedEvent(ITrackingController trackingController, OptionsMenuItem optionsMenuItem, IConversation.Type conversationType, boolean inConversationList, boolean openedBySwipe) {
+    public static void tagOptionsMenuSelectedEvent(GlobalTrackingController trackingController, OptionsMenuItem optionsMenuItem, IConversation.Type conversationType, boolean inConversationList, boolean openedBySwipe) {
 
         OptionsMenuItemSelectedEvent.Action action = getEventAction(optionsMenuItem);
         if (action == null) {
@@ -111,7 +110,7 @@ public class TrackingUtils {
         return action;
     }
 
-    public static void tagSentInviteToContactEvent(ITrackingController trackingController,
+    public static void tagSentInviteToContactEvent(GlobalTrackingController trackingController,
                                                    ContactMethod.Kind contactMethodKind,
                                                    boolean isResending,
                                                    boolean fromContactSearch) {
@@ -123,7 +122,7 @@ public class TrackingUtils {
         trackingController.tagEvent(event);
     }
 
-    public static void tagSentConnectRequestFromUserProfileEvent(ITrackingController trackingController,
+    public static void tagSentConnectRequestFromUserProfileEvent(GlobalTrackingController trackingController,
                                                                  IConnectStore.UserRequester userRequester,
                                                                  int numSharedUsers) {
         SentConnectRequestEvent.EventContext eventContext;
@@ -174,7 +173,7 @@ public class TrackingUtils {
         return type;
     }
 
-    public static void tagChangedContactsPermissionEvent(ITrackingController trackingController,
+    public static void tagChangedContactsPermissionEvent(GlobalTrackingController trackingController,
                                                          String[] permissions,
                                                          int[] grantResults) {
         for (int i = 0; i < permissions.length; i++) {
@@ -182,12 +181,12 @@ public class TrackingUtils {
             if (!permission.contains(Permission.READ_CONTACTS.toString())) {
                 continue;
             }
-            boolean grantedContactsPermission = grantResults[i] == PackageManager.PERMISSION_GRANTED ? true : false;
+            boolean grantedContactsPermission = grantResults[i] == PackageManager.PERMISSION_GRANTED;
             trackingController.tagEvent(new ChangedContactsPermissionEvent(grantedContactsPermission, false));
         }
     }
 
-    public static void tagChangedSoundNotificationLevelEvent(ITrackingController trackingController,
+    public static void tagChangedSoundNotificationLevelEvent(GlobalTrackingController trackingController,
                                                              String preferenceString,
                                                              Context context) {
         ChangedSoundNotificationLevelEvent.Level level = ChangedSoundNotificationLevelEvent.Level.ALL_SOUNDS;
@@ -200,7 +199,7 @@ public class TrackingUtils {
         trackingController.tagEvent(new ChangedSoundNotificationLevelEvent(level));
     }
 
-    public static void tagSentAudioMessageEvent(ITrackingController trackingController,
+    public static void tagSentAudioMessageEvent(GlobalTrackingController trackingController,
                                                 AudioAssetForUpload audioAssetForUpload,
                                                 AudioEffect appliedAudioEffect,
                                                 boolean fromMinimisedState,
@@ -243,7 +242,7 @@ public class TrackingUtils {
                                                               conversation));
     }
 
-    public static void onSentTextMessage(ITrackingController trackingController, IConversation conversation) {
+    public static void onSentTextMessage(GlobalTrackingController trackingController, IConversation conversation) {
         trackingController.tagEvent(new CompletedMediaActionEvent(CompletedMediaType.TEXT,
                                                                   conversation.getType().name(),
                                                                   conversation.isOtto(),
@@ -251,7 +250,7 @@ public class TrackingUtils {
                                                                   String.valueOf(conversation.getEphemeralExpiration().duration().toSeconds())));
     }
 
-    public static void onSentGifMessage(ITrackingController trackingController, IConversation conversation) {
+    public static void onSentGifMessage(GlobalTrackingController trackingController, IConversation conversation) {
         trackingController.tagEvent(new CompletedMediaActionEvent(CompletedMediaType.TEXT,
                                                                   conversation.getType().name(),
                                                                   conversation.isOtto(),
@@ -265,14 +264,9 @@ public class TrackingUtils {
                                                          conversation.isOtto(),
                                                          conversation.isEphemeral(),
                                                          String.valueOf(conversation.getEphemeralExpiration().duration().toSeconds())));
-        trackingController.tagEvent(new CompletedMediaActionEvent(CompletedMediaType.PHOTO,
-                                                                  conversation.getType().name(),
-                                                                  conversation.isOtto(),
-                                                                  conversation.isEphemeral(),
-                                                                  String.valueOf(conversation.getEphemeralExpiration().duration().toSeconds())));
     }
 
-    public static void onSentSketchMessage(ITrackingController trackingController,
+    public static void onSentSketchMessage(GlobalTrackingController trackingController,
                                            IConversation conversation,
                                            DrawingController.DrawingDestination drawingDestination) {
 
@@ -296,15 +290,9 @@ public class TrackingUtils {
                                                          conversation.isOtto(),
                                                          conversation.isEphemeral(),
                                                          String.valueOf(conversation.getEphemeralExpiration().duration().toSeconds())));
-        trackingController.tagEvent(new CompletedMediaActionEvent(CompletedMediaType.PHOTO,
-                                                                  conversation.getType().name(),
-                                                                  conversation.isOtto(),
-                                                                  conversation.isEphemeral(),
-                                                                  String.valueOf(conversation.getEphemeralExpiration().duration().toSeconds())));
-        trackingController.updateSessionAggregates(RangedAttribute.IMAGES_SENT);
     }
 
-    public static void onSentLocationMessage(ITrackingController trackingController, IConversation conversation) {
+    public static void onSentLocationMessage(GlobalTrackingController trackingController, IConversation conversation) {
         trackingController.tagEvent(new CompletedMediaActionEvent(CompletedMediaType.LOCATION,
                                                                   conversation.getType().name(),
                                                                   conversation.isOtto(),
@@ -312,7 +300,7 @@ public class TrackingUtils {
                                                                   String.valueOf(conversation.getEphemeralExpiration().duration().toSeconds())));
     }
 
-    public static void onSentPhotoMessageFromSharing(ITrackingController trackingController,
+    public static void onSentPhotoMessageFromSharing(GlobalTrackingController trackingController,
                                                      IConversation conversation) {
 
         trackingController.tagEvent(new SentPictureEvent(SentPictureEvent.Source.SHARING,
@@ -322,15 +310,9 @@ public class TrackingUtils {
                                                          conversation.isOtto(),
                                                          conversation.isEphemeral(),
                                                          String.valueOf(conversation.getEphemeralExpiration().duration().toSeconds())));
-        trackingController.tagEvent(new CompletedMediaActionEvent(CompletedMediaType.PHOTO,
-                                                                  conversation.getType().name(),
-                                                                  conversation.isOtto(),
-                                                                  conversation.isEphemeral(),
-                                                                  String.valueOf(conversation.getEphemeralExpiration().duration().toSeconds())));
-        trackingController.updateSessionAggregates(RangedAttribute.IMAGES_SENT);
     }
 
-    public static void onSentPhotoMessage(ITrackingController trackingController,
+    public static void onSentPhotoMessage(GlobalTrackingController trackingController,
                                           IConversation conversation,
                                           SentPictureEvent.Source source,
                                           SentPictureEvent.Method method) {
@@ -341,16 +323,10 @@ public class TrackingUtils {
                                                          conversation.isOtto(),
                                                          conversation.isEphemeral(),
                                                          String.valueOf(conversation.getEphemeralExpiration().duration().toSeconds())));
-        trackingController.tagEvent(new CompletedMediaActionEvent(CompletedMediaType.PHOTO,
-                                                                  conversation.getType().name(),
-                                                                  conversation.isOtto(),
-                                                                  conversation.isEphemeral(),
-                                                                  String.valueOf(conversation.getEphemeralExpiration().duration().toSeconds())));
-        trackingController.updateSessionAggregates(RangedAttribute.IMAGES_SENT);
     }
 
 
-    public static void onSentPhotoMessage(ITrackingController trackingController,
+    public static void onSentPhotoMessage(GlobalTrackingController trackingController,
                                           IConversation conversation,
                                           ImagePreviewLayout.Source source) {
         SentPictureEvent.Source eventSource = source == ImagePreviewLayout.Source.CAMERA ?
@@ -373,7 +349,7 @@ public class TrackingUtils {
     }
 
 
-    public static void onSentPingMessage(ITrackingController trackingController, IConversation conversation) {
+    public static void onSentPingMessage(GlobalTrackingController trackingController, IConversation conversation) {
         boolean isGroupConversation = conversation.getType() == IConversation.Type.GROUP;
         trackingController.tagEvent(OpenedMediaActionEvent.cursorAction(OpenedMediaAction.PING, conversation));
         trackingController.tagEvent(new CompletedMediaActionEvent(CompletedMediaType.PING,
@@ -383,20 +359,31 @@ public class TrackingUtils {
                                                                   String.valueOf(conversation.getEphemeralExpiration().duration().toSeconds())));
     }
 
-    public static void onUserSelectedInStartUI(ITrackingController trackingController,
+    public static void onUserSelectedInStartUI(GlobalTrackingController trackingController,
                                                User user,
                                                boolean isTopUser,
                                                boolean isAddingToConversation,
-                                               int rowType) {
-
+                                               int position,
+                                               SearchResultAdapter adapter) {
+        int itemType = adapter.getItemViewType(position);
+        if (itemType < 0) {
+            return;
+        }
         if (isTopUser) {
-            trackingController.tagEvent(new SelectedTopUser());
+            trackingController.tagEvent(new SelectedTopUser(position + 1));
         } else {
-            switch (rowType) {
+            switch (itemType) {
                 case SearchResultAdapter.ITEM_TYPE_CONNECTED_USER:
+                    trackingController.tagEvent(new SelectedUserFromSearchEvent(user.getConnectionStatus().toString(),
+                                                                                isAddingToConversation,
+                                                                                SelectedUserFromSearchEvent.Section.CONTACTS,
+                                                                                position));
+                    break;
                 case SearchResultAdapter.ITEM_TYPE_OTHER_USER:
                     trackingController.tagEvent(new SelectedUserFromSearchEvent(user.getConnectionStatus().toString(),
-                                                                                isAddingToConversation));
+                                                                                isAddingToConversation,
+                                                                                SelectedUserFromSearchEvent.Section.DIRECTORY,
+                                                                                adapter.getOtherUserInternalPosition(position)));
                     break;
             }
         }

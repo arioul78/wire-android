@@ -30,13 +30,14 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 import com.waz.api.User;
 import com.waz.zclient.R;
-import com.waz.zclient.pages.main.pickuser.PickUserEditText;
 import com.waz.zclient.ui.utils.TypefaceUtils;
 import com.waz.zclient.utils.ViewUtils;
+import com.waz.zclient.views.PickableElement;
+import com.waz.zclient.views.PickerSpannableEditText;
 
 public class SearchBoxView extends FrameLayout {
 
-    private PickUserEditText inputEditText;
+    private PickerSpannableEditText inputEditText;
     private TextView clearButton;
     private View colorBottomBorder;
 
@@ -62,13 +63,20 @@ public class SearchBoxView extends FrameLayout {
         inputEditText = ViewUtils.getView(this, R.id.puet_pickuser__searchbox);
         colorBottomBorder = ViewUtils.getView(this, R.id.v_people_picker__input__color_bottom_border);
 
-        int hintColorStartUI = getResources().getColor(R.color.text__secondary_light);
+        int hintColorStartUI;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            //noinspection deprecation
+            hintColorStartUI = getResources().getColor(R.color.text__secondary_light);
+        } else {
+            hintColorStartUI = getResources().getColor(R.color.text__secondary_light, context.getTheme());
+        }
         inputEditText.setTypeface(TypefaceUtils.getTypeface(context.getString(R.string.wire__typeface__light)));
-        inputEditText.setCallback(new PickUserEditText.Callback() {
+        inputEditText.setCallback(new PickerSpannableEditText.Callback() {
+
             @Override
-            public void onRemovedTokenSpan(User user) {
+            public void onRemovedTokenSpan(PickableElement element) {
                 if (callback != null) {
-                    callback.onRemovedTokenSpan(user);
+                    callback.onRemovedTokenSpan(element);
                 }
             }
 
@@ -103,7 +111,7 @@ public class SearchBoxView extends FrameLayout {
             }
         });
 
-        if (android.os.Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {
             inputEditText.setLineSpacing(getResources().getDimensionPixelSize(R.dimen.people_picker__input__line_spacing_extra__greater_than_android_sdk_19), 1);
         }
 
@@ -127,7 +135,13 @@ public class SearchBoxView extends FrameLayout {
     }
 
     public void forceDarkTheme() {
-        int textColor = getResources().getColor(R.color.text__primary_dark);
+        int textColor;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            //noinspection deprecation
+            textColor = getResources().getColor(R.color.text__primary_dark);
+        } else {
+            textColor = getResources().getColor(R.color.text__primary_dark, getContext().getTheme());
+        }
         inputEditText.setTextColor(textColor);
         inputEditText.setHintTextColor(textColor);
         clearButton.setTextColor(textColor);
@@ -148,12 +162,32 @@ public class SearchBoxView extends FrameLayout {
         inputEditText.setAccentColor(color);
     }
 
-    public void addUser(User user) {
-        inputEditText.addUser(user);
+    public void addUser(final User user) {
+        inputEditText.addElement(new PickableElement() {
+            @Override
+            public String name() {
+                return user.getDisplayName();
+            }
+
+            @Override
+            public String id() {
+                return user.getId();
+            }
+        });
     }
 
-    public void removeUser(User user) {
-        inputEditText.removeUser(user);
+    public void removeUser(final User user) {
+        inputEditText.removeElement(new PickableElement() {
+            @Override
+            public String name() {
+                return user.getDisplayName();
+            }
+
+            @Override
+            public String id() {
+                return user.getId();
+            }
+        });
     }
 
     public String getSearchFilter() {
@@ -169,7 +203,7 @@ public class SearchBoxView extends FrameLayout {
         inputEditText.requestFocus();
     }
 
-    public interface Callback extends PickUserEditText.Callback {
+    public interface Callback extends PickerSpannableEditText.Callback {
         void onKeyboardDoneAction();
         void onFocusChange(boolean hasFocus);
         void onClearButton();
